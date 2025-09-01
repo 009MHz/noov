@@ -23,7 +23,7 @@ jobs:
           pip install pytest-playwright allure-pytest
           python -m playwright install --with-deps
       - name: Run UI tests
-        run: pytest web/tests -m ui --base-url https://noovoleum.com
+        run: pytest web/tests -m ui --base-url https://noovoleum.com -n=auto --headless --retries=2
       - name: Run API tests
         run: pytest api/tests -m api
       - name: Upload Allure results
