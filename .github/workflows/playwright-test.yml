@@ -31,7 +31,7 @@ jobs:
         run: |
           pytest tests/web --base-url=https://noovoleum.com \
                  -n=auto --reruns 2 --reruns-delay 2 \
-                 --alluredir=allure-results \
+                 --alluredir=allure-results --headless\
 
       # API tests
       - name: Run API tests
