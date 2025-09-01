@@ -1,0 +1,8 @@
+# Dependency placeholders. Actual packages should be
+# installed in environments with internet access.
+# playwright>=1.41.0
+# pytest>=7.0.0
+# pytest-playwright>=0.3.0
+# allure-pytest>=2.13.0
+# locust>=2.15.1
+# appium-python-client>=2.9.0
