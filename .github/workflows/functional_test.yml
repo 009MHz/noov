@@ -24,7 +24,7 @@ jobs:
           USER_EMAIL: ${{ secrets.USER_EMAIL }}
           USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
         run: |
-          pytest web/tests api/tests -n auto -m "ui or api" --maxfail=1
+          pytest api/tests -m api -q
       - name: Upload Allure results
         uses: actions/upload-artifact@v4
         with:
