@@ -1,6 +1,8 @@
 name: Test Caller & Reporter
 
 on:
+  push:
+  pull_request:
   workflow_dispatch:
     inputs:
       run_ui:
@@ -26,15 +28,31 @@ permissions:
   id-token: write
 
 jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      event: ${{ steps.out.outputs.event }}
+    steps:
+      - id: out
+        run: echo "event=${{ github.event_name }}" >> "$GITHUB_OUTPUT"
+
   ui:
-    if: ${{ inputs.run_ui }}
+    needs: meta
+    # Run UI when:
+    # - manual dispatch AND run_ui = true, OR
+    # - any non-dispatch trigger (push/PR)
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_ui) || (github.event_name != 'workflow_dispatch') }}
     uses: ./.github/workflows/ui-test.yml
     with:
-      base_url: ${{ inputs.base_url }}
-      browsers: ${{ inputs.browsers }}
+      base_url: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || 'https://noovoleum.com' }}
+      browsers:  ${{ github.event_name == 'workflow_dispatch' && inputs.browsers  || 'chromium' }}
 
   api:
-    if: ${{ inputs.run_api }}
+    needs: meta
+    # Run API when:
+    # - manual dispatch AND run_api = true, OR
+    # - any non-dispatch trigger (push/PR)
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_api) || (github.event_name != 'workflow_dispatch') }}
     uses: ./.github/workflows/api-test.yml
 
   publish:
