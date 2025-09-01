@@ -9,16 +9,29 @@ on:
       browsers:
         required: false
         type: string
-        default: 'chromium'
+        default: 'chromium'   # e.g. "chromium,firefox,webkit"
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      browsers_json: ${{ steps.mk.outputs.browsers_json }}
+    steps:
+      - id: mk
+        run: |
+          RAW="${{ inputs.browsers }}"
+          # Normalize (remove spaces), turn "a,b,c" -> ["a","b","c"]
+          RAW_NO_SPACE="$(echo "$RAW" | tr -d '[:space:]')"
+          JSON_ARRAY="$(printf '%s' "$RAW_NO_SPACE" | awk -F, 'BEGIN{printf "["}{for(i=1;i<=NF;i++){gsub(/"/,"",$i); printf "%s\"%s\"", (i>1?",":""), $i} printf "]"}')"
+          echo "browsers_json=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
+
   ui:
     runs-on: ubuntu-latest
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
-        # Turn "chromium,firefox" into ["chromium","firefox"]
-        browser: ${{ fromJson(format('["{0}"]', replace(inputs.browsers || github.event.inputs.browsers || 'chromium', ',', '","'))) }}
+        browser: ${{ fromJson(needs.prepare.outputs.browsers_json) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +60,7 @@ jobs:
         run: |
           pytest tests/web \
             --browser ${{ matrix.browser }} \
-            --base-url=${{ inputs.base_url || github.event.inputs.base_url || 'https://noovoleum.com' }} \
+            --base-url=${{ inputs.base_url }} \
             -n=auto --reruns 2 --reruns-delay 2 \
             --alluredir=allure-results
 
