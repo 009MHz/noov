@@ -1,275 +1,89 @@
-# Selenium Python Test Automation Framework
+# Noovoleum Test Automation Framework
 
-A comprehensive Selenium-based test automation framework for testing the Noovoleum website using Python, pytest, and Allure reporting.
+This repository contains a sample automation framework for the Noovoleum platform. It demonstrates web, API, mobile and performance testing using Python and common tooling.
 
-## 🚀 Features
+## Features
+- Web UI automation with Playwright.
+- API testing through HTTPX clients.
+- Mobile testing via Appium.
+- Performance checks with Locust.
+- Centralized configuration loaded from YAML files.
+- Reporting with pytest's HTML plugin and Allure.
 
-- **Object-Oriented Design**: Page Object Model (POM) implementation
-- **Cross-Platform**: Runs on local machines and GitHub Actions
-- **Flexible Execution**: Supports both headless and headed browser modes
-- **Rich Reporting**: Allure reports with screenshots and detailed logs
-- **CI/CD Integration**: Automated testing via GitHub Actions
-- **Parallel Execution**: Support for running tests in parallel
-- **Test Categories**: Smoke, regression, and critical test markers
-- **Retry Mechanism**: Automatic retry for flaky tests
+## Preparation & Installation
+1. **Prerequisites**
+   - Python 3.9+
+   - Git
+   - Browsers for Playwright (`playwright install` will download them)
+   - Optional Android/iOS emulators for mobile tests
 
-## 📋 Prerequisites
-
-- Python 3.9+ 
-- Chrome browser
-- Git
-
-## 🛠️ Installation
-
-1. **Clone the repository:**
+2. **Clone the repository**
    ```bash
    git clone <repository-url>
+   cd noovoleum
    ```
 
-2. **Create virtual environment:**
+3. **Create a virtual environment**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   source .venv/bin/activate      # Windows: .venv\Scripts\activate
    ```
 
-3. **Install dependencies:**
+4. **Install dependencies and browsers**
    ```bash
    pip install -r requirements.txt
+   playwright install
    ```
 
-## 🏗️ Project Structure
+## Running tests
+Run tests with `pytest` or `locust`.
 
-```
-selenium-testing-framework/
-├── .github/workflows/          # GitHub Actions CI/CD
-├── pages/                      # Page Object Model classes
-│   ├── base_page.py           # Base page with common methods
-│   └── home_page.py           # Home page specific methods
-├── tests/                      # Test cases
-│   ├── conftest.py            # Pytest configuration and fixtures
-│   └── test_home_page.py      # Home page tests
-├── utils/                      # Utility modules
-│   ├── config.py              # Configuration settings
-│   └── driver_factory.py      # WebDriver factory
-├── allure-results/            # Allure test results
-├── reports/                   # HTML reports
-├── requirements.txt           # Python dependencies
-├── pytest.ini               # Pytest configuration
-└── README.md                 # This file
-```
-
-## 🎯 Usage
-
-### Local Execution
-
-**Run all tests:**
+### Run all pytest suites
 ```bash
-pytest tests/
+pytest
 ```
 
-**Run specific test categories:**
+### Web UI tests
 ```bash
-# Smoke tests
-pytest tests/ -m smoke
-
-# Regression tests  
-pytest tests/ -m regression
-
-# Critical tests
-pytest tests/ -m critical
+pytest tests/web
 ```
 
-**Run in headless mode:**
+### Mobile tests
 ```bash
-pytest tests/ --headless
+pytest tests/mobile
 ```
 
-**Run with custom browser:**
+### Performance tests
 ```bash
-pytest tests/ --browser=chrome
+locust -f tests/performance/locustfile.py --headless -u 50 -r 5 -t 5m --host https://api.example.com
 ```
 
-**Run with custom base URL:**
-```bash
-pytest tests/ --base-url=https://noovoleum.com/id/
+## Project structure
+```
+config/                # Environment and device settings
+fixtures/              # Reusable pytest fixtures
+libs/                  # Shared utilities
+sources/
+  apis/                # API clients
+  web/                 # Web page objects
+  mobile/              # Mobile screen objects
+tests/
+  web/
+    smoke/             # Desktop web smoke tests
+    mobile/            # Mobile web tests
+  mobile/
+    android/           # Android tests
+    ios/               # iOS tests
+  api/                 # API tests
+  performance/         # Locust performance scenarios
+  test_suites.md       # Manual test cases
+conftest.py            # Pytest configuration hooks
+pytest.ini             # Pytest settings and markers
+requirements.txt       # Project dependencies
 ```
 
-**Parallel execution:**
-```bash
-pytest tests/ -n auto  # Auto-detect CPU cores
-pytest tests/ -n 4     # Use 4 parallel workers
-```
+## Configuration
+The `load_settings` helper in `libs/config_loader.py` reads YAML files and environment variables to configure test runs.
 
-### Environment Variables
-
-Set these environment variables to customize test execution:
-
-```bash
-export BASE_URL="https://noovoleum.com/id/"
-export BROWSER="chrome"
-export HEADLESS="false"
-export IMPLICIT_WAIT="10"
-export EXPLICIT_WAIT="10"
-export WINDOW_WIDTH="1920"
-export WINDOW_HEIGHT="1080"
-```
-
-## 📊 Reporting
-
-### Allure Reports
-
-**Generate and view Allure reports:**
-```bash
-# After running tests
-allure serve allure-results
-
-# Or generate static report
-allure generate allure-results --clean -o allure-report
-allure open allure-report
-```
-
-### HTML Reports
-
-HTML reports are automatically generated in the `reports/` directory after test execution.
-
-## 🔄 CI/CD Pipeline
-
-The framework includes a comprehensive GitHub Actions workflow that:
-
-- Runs tests on multiple Python versions (3.9, 3.10, 3.11)
-- Executes different test suites based on triggers:
-  - **Pull Request**: Smoke tests
-  - **Push to main**: Critical tests
-  - **Scheduled**: Regression tests
-  - **Manual trigger**: Configurable test suite
-- Generates and deploys Allure reports to GitHub Pages
-- Uploads artifacts (reports, screenshots, logs)
-- Sends notifications on test results
-
-### Workflow Triggers
-
-```yaml
-# Automatic triggers
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
-
-# Manual trigger with options
-workflow_dispatch:
-  inputs:
-    test_suite: [all, smoke, regression, critical]
-    headless: boolean
-```
-
-## 🏷️ Test Markers
-
-Use pytest markers to categorize and run specific tests:
-
-- `@pytest.mark.smoke`: Quick validation tests
-- `@pytest.mark.regression`: Comprehensive functionality tests  
-- `@pytest.mark.critical`: Essential functionality tests
-- `@pytest.mark.slow`: Long-running tests
-
-## 🔧 Configuration
-
-### pytest.ini
-Contains pytest configuration including:
-- Test discovery patterns
-- Report generation settings
-- Allure integration
-- Custom markers
-
-### utils/config.py
-Centralized configuration management:
-- Browser settings
-- URL configuration  
-- Timeouts and waits
-- Chrome options
-- Environment detection
-
-## 📝 Writing Tests
-
-### Example Test Structure
-
-```python
-@allure.epic("Website")
-@allure.feature("Home Page")
-@allure.story("Page Loading")
-@pytest.mark.smoke
-def test_home_page_loads(home_page):
-    with allure.step("Navigate to home page"):
-        home_page.open()
-    
-    with allure.step("Verify page loads"):
-        assert home_page.is_page_loaded()
-```
-
-### Page Object Example
-
-```python
-class HomePage(BasePage):
-    LOGO = (By.CSS_SELECTOR, ".logo")
-    
-    def open(self):
-        self.navigate_to(self.page_url)
-        return self
-    
-    def is_logo_displayed(self):
-        return self.is_displayed(self.LOGO)
-```
-
-## 🐛 Debugging
-
-### Screenshots
-Screenshots are automatically captured:
-- On test failures
-- At specific test steps
-- For debugging purposes
-
-### Logs
-Detailed logging is available:
-- Console output
-- File logging (`test_automation.log`)
-- Allure step logging
-
-### Debug Mode
-Run tests with verbose output:
-```bash
-pytest tests/ -v -s --tb=long
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 📞 Support
-
-For issues and questions:
-- Create an issue in the repository
-- Check existing documentation
-- Review test logs and reports
-
-## 🔄 Updates and Maintenance
-
-- Regularly update dependencies
-- Monitor test execution in CI/CD
-- Review and update page objects as the website changes  
-- Maintain test data and configuration
-- Update browser drivers as needed (handled automatically by webdriver-manager)
-
----
-
-**Happy Testing! 🧪**
+## License
+MIT

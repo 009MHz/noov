@@ -1,0 +1,42 @@
+name: API Tests
+
+on:
+  workflow_call: {}
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-api-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-api-
+
+      - name: Install deps
+        run: |
+          pip install -U pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install pytest allure-pytest httpx
+          fi
+
+      - name: Run API tests
+        run: |
+          pytest tests/api --alluredir=allure-results
+
+      - name: Upload Allure (API)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-api
+          path: allure-results
+          if-no-files-found: warn
