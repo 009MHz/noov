@@ -1,0 +1,45 @@
+name: UI Tests
+
+on:
+  push:
+    paths: ['tests/web/**', 'src/**', '.github/workflows/ui-test.yml']
+  pull_request:
+    paths: ['tests/web/**', 'src/**', '.github/workflows/ui-test.yml']
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL'
+        type: string
+        default: 'https://noovoleum.com'
+  workflow_call:
+    inputs:
+      base_url:
+        required: true
+        type: string
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          pip install -U pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; else \
+            pip install pytest pytest-playwright allure-pytest pytest-xdist pytest-rerunfailures; fi
+          python -m playwright install --with-deps
+      - name: Run UI tests (headless by default)
+        run: |
+          pytest tests/web --base-url=${{ inputs.base_url || github.event.inputs.base_url || 'https://noovoleum.com' }} \
+                 -n=auto --reruns 2 --reruns-delay 2 \
+                 --alluredir=allure-results
+      - name: Upload Allure (UI)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-ui
+          path: allure-results
+          if-no-files-found: warn

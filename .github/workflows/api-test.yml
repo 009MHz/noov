@@ -1,0 +1,72 @@
+name: Test Caller & Reporter
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_ui:
+        description: 'Run UI suite'
+        type: boolean
+        default: true
+      run_api:
+        description: 'Run API suite'
+        type: boolean
+        default: true
+      base_url:
+        description: 'Base URL for UI suite'
+        type: string
+        default: 'https://noovoleum.com'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  ui:
+    if: ${{ inputs.run_ui }}
+    uses: ./.github/workflows/ui-test.yml
+    with:
+      base_url: ${{ inputs.base_url }}
+
+  api:
+    if: ${{ inputs.run_api }}
+    uses: ./.github/workflows/api-test.yml
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [ui, api]
+    if: always()
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: allure-ui
+          path: ./allure-results/ui
+        continue-on-error: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: allure-api
+          path: ./allure-results/api
+        continue-on-error: true
+
+      - name: Merge Allure results
+        run: |
+          mkdir -p ./allure-merged
+          cp -r ./allure-results/ui/* ./allure-merged/ 2>/dev/null || true
+          cp -r ./allure-results/api/* ./allure-merged/ 2>/dev/null || true
+
+      - name: Install Allure CLI
+        run: |
+          curl -sL https://github.com/allure-framework/allure2/releases/latest/download/allure-2.29.0.tgz \
+            | sudo tar -xz -C /opt/
+          echo "/opt/allure-2.29.0/bin" >> $GITHUB_PATH
+
+      - name: Generate Allure site
+        run: allure generate ./allure-merged -o ./allure-report --clean
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./allure-report
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
