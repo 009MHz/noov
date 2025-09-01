@@ -1,20 +1,6 @@
 name: UI Tests
 
 on:
-  push:
-    paths: ['tests/web/**', 'src/**', '.github/workflows/ui-test.yml']
-  pull_request:
-    paths: ['tests/web/**', 'src/**', '.github/workflows/ui-test.yml']
-  workflow_dispatch:
-    inputs:
-      base_url:
-        description: 'Base URL'
-        type: string
-        default: 'https://noovoleum.com'
-      browsers:
-        description: 'Browsers (comma-separated: chromium,firefox,webkit)'
-        type: string
-        default: 'chromium'
   workflow_call:
     inputs:
       base_url:
