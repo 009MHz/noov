@@ -1,10 +1,23 @@
 import pytest
-from libs.config_loader import load_settings
+from playwright.async_api import async_playwright
 
-@pytest.fixture(scope="function")
-async def api(request, pw):
-    s = load_settings(env=request.config.getoption("--env"))
-    ctx = await pw.request.new_context(base_url=s.api_url,
-                                       extra_http_headers={"Accept":"application/json"})
+# If you already have a config loader, import and use it; hardcode for brevity:
+API_BASE = "https://api.noovoleum.com"
+
+@pytest.fixture(scope="session")
+async def pw():
+    async with async_playwright() as p:
+        yield p
+
+@pytest.fixture(scope="session")
+async def api_context(pw):
+    ctx = await pw.request.new_context(
+        base_url=API_BASE,
+        extra_http_headers={
+            "Accept": "application/json",
+            # "Authorization": f"Bearer {os.getenv('API_TOKEN')}"  # if needed later
+        },
+        timeout=30_000,  # 30s default timeout
+    )
     yield ctx
     await ctx.dispose()
