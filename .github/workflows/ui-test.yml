@@ -9,7 +9,7 @@ on:
       browsers:
         required: false
         type: string
-        default: 'chromium'   # e.g. "chromium,firefox,webkit"
+        default: 'chromium'   # e.g., "chromium,firefox,webkit"
 
 jobs:
   prepare:
@@ -20,7 +20,6 @@ jobs:
       - id: mk
         run: |
           RAW="${{ inputs.browsers }}"
-          # Normalize (remove spaces), turn "a,b,c" -> ["a","b","c"]
           RAW_NO_SPACE="$(echo "$RAW" | tr -d '[:space:]')"
           JSON_ARRAY="$(printf '%s' "$RAW_NO_SPACE" | awk -F, 'BEGIN{printf "["}{for(i=1;i<=NF;i++){gsub(/"/,"",$i); printf "%s\"%s\"", (i>1?",":""), $i} printf "]"}')"
           echo "browsers_json=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
@@ -32,6 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: ${{ fromJson(needs.prepare.outputs.browsers_json) }}
+
     steps:
       - uses: actions/checkout@v4
 
