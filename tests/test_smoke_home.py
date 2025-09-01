@@ -1,7 +1,7 @@
 import pytest
 import allure
 import time
-from pages.pg_home import HomePage
+from sources.pages.pg_home import HomePage
 from elements.el_home import HomeElements
 import logging
 

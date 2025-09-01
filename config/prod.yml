@@ -1,0 +1,25 @@
+app:
+  base_url: "https://noovoleum.com"
+  api_url: "https://api.noovoleum.com"
+  default_user:
+    username: ${USER_EMAIL}
+    password: ${USER_PASSWORD}
+playwright:
+  browser: chromium
+  headless: true
+  video: on
+  screenshot: on
+  storage_state_path: ".auth/storage_state.json"
+mobile:
+  android:
+    app_path: "apps/android/noovoleum-release.apk"
+    device_name: "Pixel_7_API_34"
+    platformVersion: "14.0"
+  ios:
+    app_path: "apps/ios/Noovoleum.app"
+    device_name: "iPhone 15"
+    platformVersion: "17.5"
+perf:
+  users: 50
+  spawn_rate: 5
+  run_time: "5m"

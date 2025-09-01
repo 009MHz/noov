@@ -1,0 +1,27 @@
+name: Android Tests
+on: [push, pull_request]
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      appium:
+        image: appium/appium
+        ports: ["4723:4723"]
+        options: --health-cmd="appium-doctor" --health-timeout=10s --health-interval=10s
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+      - name: Run Android tests
+        run: |
+          pytest mobile/tests -m mobile -k android --maxfail=1
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-android
+          path: reports/allure-results

@@ -1,0 +1,28 @@
+
+base_url: "https://noovoleum.com"
+api_base: "https://noovoleum.com"  # Using site endpoints as placeholders
+timeouts:
+  short: 3
+  medium: 10
+  long: 30
+devices:
+  mweb_pixel7: "Pixel 7"
+  mweb_iphone14: "iPhone 14"
+grid:
+  provider: "local"
+  appium:
+    url: "http://127.0.0.1:4723/wd/hub"
+android:
+  platformName: "Android"
+  deviceName: "Android Emulator"
+  app: ""
+  appPackage: ""
+  appActivity: ""
+  automationName: "UiAutomator2"
+ios:
+  platformName: "iOS"
+  deviceName: "iPhone Simulator"
+  platformVersion: ""
+  bundleId: ""
+  app: ""
+  automationName: "XCUITest"

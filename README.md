@@ -40,22 +40,61 @@ A comprehensive Selenium-based test automation framework for testing the Noovole
 ## 🏗️ Project Structure
 
 ```
-selenium-testing-framework/
-├── .github/workflows/          # GitHub Actions CI/CD
-├── pages/                      # Page Object Model classes
-│   ├── base_page.py           # Base page with common methods
-│   └── home_page.py           # Home page specific methods
-├── tests/                      # Test cases
-│   ├── conftest.py            # Pytest configuration and fixtures
-│   └── test_home_page.py      # Home page tests
-├── utils/                      # Utility modules
-│   ├── config.py              # Configuration settings
-│   └── driver_factory.py      # WebDriver factory
-├── allure-results/            # Allure test results
-├── reports/                   # HTML reports
-├── requirements.txt           # Python dependencies
-├── pytest.ini               # Pytest configuration
-└── README.md                 # This file
+root/
+├─ README.md
+├─ pyproject.toml                # or requirements/*.txt per package
+├─ pytest.ini                    # markers, addopts, allure dir
+├─ .env.example                  # shared env keys (never commit real secrets)
+├─ config/
+│  ├─ base.yaml                  # default settings
+│  ├─ dev.yaml                   # env overrides
+│  ├─ staging.yaml
+│  ├─ prod.yaml
+│  └─ devices.yaml               # mobile & emulation profiles
+├─ libs/                         # shared libs reused by all packs
+│  ├─ config_loader.py
+│  ├─ logger.py
+│  ├─ data_factory.py
+│  ├─ allure_utils.py
+│  └─ waiters.py
+├─ common/                       # domain-agnostic abstractions
+│  ├─ pages/                     # base classes
+│  │  ├─ base_page.py
+│  │  ├─ base_mobile_screen.py
+│  │  └─ base_api_client.py
+│  └─ fixtures/                  # cross-cutting pytest fixtures
+│     ├─ auth_context.py         # reusable login/session (storageState)
+│     ├─ playwright_fixtures.py  # browser/page/context
+│     ├─ appium_fixtures.py      # android/ios drivers
+│     ├─ api_fixtures.py         # request_context
+│     └─ env_fixtures.py         # config per run
+├─ web/                          # desktop & mobile web (Playwright)
+│  ├─ pages/                     # POM pages
+│  │  └─ login_page.py
+│  ├─ tests/
+│  │  ├─ smoke/
+│  │  └─ regression/
+│  └─ elements/                  # locator maps if you separate
+├─ api/                          # API tests (Playwright request)
+│  ├─ clients/
+│  │  └─ auth_client.py
+│  └─ tests/
+├─ mobile/                       # Appium Python (Android/iOS)
+│  ├─ screens/
+│  │  └─ login_screen.py
+│  └─ tests/
+├─ perf/                         # Locust load tests
+│  ├─ locustfile.py
+│  └─ scenarios/
+├─ reports/
+│  ├─ allure-results/            # raw results (CI artifact)
+│  └─ allure-report/             # generated site (GH Pages)
+└─ .github/
+   └─ workflows/
+      ├─ ui_api.yml              # web & api
+      ├─ mobile_android.yml
+      ├─ mobile_ios.yml
+      └─ publish_allure.yml      # merge + publish to Pages
 ```
 
 ## 🎯 Usage

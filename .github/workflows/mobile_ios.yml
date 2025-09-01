@@ -1,0 +1,29 @@
+name: iOS Tests
+on: [push, pull_request]
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Boot Simulator
+        run: |
+          xcrun simctl boot "iPhone 15"
+          xcrun simctl bootstatus booted -b
+      - name: Start Appium
+        run: |
+          npm i -g appium@next appium-xcuitest-driver
+          appium --log-level info &
+          sleep 5
+      - name: Run iOS tests
+        run: pytest mobile/tests -m mobile -k ios --maxfail=1
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-ios
+          path: reports/allure-results
