@@ -11,35 +11,64 @@ on:
         description: 'Base URL'
         type: string
         default: 'https://noovoleum.com'
+      browsers:
+        description: 'Browsers (comma-separated: chromium,firefox,webkit)'
+        type: string
+        default: 'chromium'
   workflow_call:
     inputs:
       base_url:
         required: true
         type: string
+      browsers:
+        required: false
+        type: string
+        default: 'chromium'
 
 jobs:
   ui:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Turn "chromium,firefox" into ["chromium","firefox"]
+        browser: ${{ fromJson(format('["{0}"]', replace(inputs.browsers || github.event.inputs.browsers || 'chromium', ',', '","'))) }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-ui-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-ui-
+
       - name: Install deps
         run: |
           pip install -U pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; else \
-            pip install pytest pytest-playwright allure-pytest pytest-xdist pytest-rerunfailures; fi
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install pytest pytest-playwright allure-pytest pytest-xdist pytest-rerunfailures
+          fi
           python -m playwright install --with-deps
-      - name: Run UI tests (headless by default)
+
+      - name: Run UI tests (${{ matrix.browser }})
         run: |
-          pytest tests/web --base-url=${{ inputs.base_url || github.event.inputs.base_url || 'https://noovoleum.com' }} \
-                 -n=auto --reruns 2 --reruns-delay 2 \
-                 --alluredir=allure-results
-      - name: Upload Allure (UI)
+          pytest tests/web \
+            --browser ${{ matrix.browser }} \
+            --base-url=${{ inputs.base_url || github.event.inputs.base_url || 'https://noovoleum.com' }} \
+            -n=auto --reruns 2 --reruns-delay 2 \
+            --alluredir=allure-results
+
+      - name: Upload Allure (UI-${{ matrix.browser }})
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-ui
+          name: allure-ui-${{ matrix.browser }}
           path: allure-results
           if-no-files-found: warn
