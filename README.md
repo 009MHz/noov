@@ -55,7 +55,7 @@ pytest tests/mobile
 
 ### Performance tests
 ```bash
-locust -f tests/perf/locustfile.py --headless -u 50 -r 5 -t 5m --host https://api.example.com
+locust -f tests/performance/locustfile.py --headless -u 50 -r 5 -t 5m --host https://api.example.com
 ```
 
 ## Project structure
@@ -68,9 +68,15 @@ sources/
   web/                 # Web page objects
   mobile/              # Mobile screen objects
 tests/
-  web/                 # Web UI tests
-  mobile/              # Mobile tests
-  perf/                # Locust performance scenarios
+  web/
+    smoke/             # Desktop web smoke tests
+    mobile/            # Mobile web tests
+  mobile/
+    android/           # Android tests
+    ios/               # iOS tests
+  api/                 # API tests
+  performance/         # Locust performance scenarios
+  test_suites.md       # Manual test cases
 conftest.py            # Pytest configuration hooks
 pytest.ini             # Pytest settings and markers
 requirements.txt       # Project dependencies
