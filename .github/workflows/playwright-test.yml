@@ -1,73 +1,73 @@
-name: Pipeline Tests
+  name: Pipeline Tests
 
-on:
-  push:
-  pull_request:
-  workflow_dispatch:
+  on:
+    push:
+    pull_request:
+    workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+  permissions:
+    contents: read
+    pages: write
+    id-token: write
 
-jobs:
-  tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  jobs:
+    tests:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+        - uses: actions/setup-python@v5
+          with:
+            python-version: '3.11'
 
-      - name: Install deps
-        run: |
-          pip install -U pip
-          pip install -r requirements.txt
-          python -m playwright install --with-deps
+        - name: Install deps
+          run: |
+            pip install -U pip
+            pip install -r requirements.txt
+            python -m playwright install --with-deps
 
-      # UI tests (headless by default; remove invalid flags)
-      - name: Run UI tests
-        run: |
-          pytest tests/web --base-url=https://noovoleum.com \
-                 -n=auto --reruns 2 --reruns-delay 2 \
-                 --alluredir=allure-results --headless\
+        # UI tests (headless by default; remove invalid flags)
+        - name: Run UI tests
+          run: |
+            pytest tests/web --base-url=https://noovoleum.com \
+                   -n=auto --reruns 2 --reruns-delay 2 \
+                   --alluredir=allure-results --headless\
 
-      # API tests
-      - name: Run API tests
-        run: |
-          pytest tests/api \
-                 --alluredir=allure-results
+        # API tests
+        - name: Run API tests
+          run: |
+            pytest tests/api \
+                   --alluredir=allure-results
 
-      - name: Upload Allure results
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results
-          path: allure-results
-          retention-days: 7
+        - name: Upload Allure results
+          uses: actions/upload-artifact@v4
+          with:
+            name: allure-results
+            path: allure-results
+            retention-days: 7
 
-  publish:
-    runs-on: ubuntu-latest
-    needs: tests
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: allure-results
-          path: ./allure-results
+    publish:
+      runs-on: ubuntu-latest
+      needs: tests
+      steps:
+        - uses: actions/download-artifact@v4
+          with:
+            name: allure-results
+            path: ./allure-results
 
-      - name: Install Allure CLI
-        run: |
-          curl -sL https://github.com/allure-framework/allure2/releases/latest/download/allure-2.29.0.tgz \
-            | sudo tar -xz -C /opt/
-          echo "/opt/allure-2.29.0/bin" >> $GITHUB_PATH
+        - name: Install Allure CLI
+          run: |
+            curl -sL https://github.com/allure-framework/allure2/releases/latest/download/allure-2.29.0.tgz \
+              | sudo tar -xz -C /opt/
+            echo "/opt/allure-2.29.0/bin" >> $GITHUB_PATH
 
-      - name: Generate Allure site
-        run: allure generate ./allure-results -o ./allure-report --clean
+        - name: Generate Allure site
+          run: allure generate ./allure-results -o ./allure-report --clean
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./allure-report
+        - name: Upload Pages artifact
+          uses: actions/upload-pages-artifact@v3
+          with:
+            path: ./allure-report
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+        - name: Deploy to GitHub Pages
+          uses: actions/deploy-pages@v4
