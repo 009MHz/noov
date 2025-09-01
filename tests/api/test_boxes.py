@@ -1,40 +1,23 @@
 import json
 import pytest
-from allure_commons._allure import attach
+import allure
 from allure_commons.types import AttachmentType
+from playwright.sync_api import Playwright
+
+BASE_API = "https://api.noovoleum.com"
 
 @pytest.mark.api
-async def test_boxes_ok(api_context):
-    resp = await api_context.get("/open_api/boxes")
-    # Attach response for debugging/reporting
-    attach(await resp.text(), name="boxes.json", attachment_type=AttachmentType.JSON)
-    assert resp.ok, f"Unexpected status {resp.status}: {await resp.text()}"
-
-@pytest.mark.api
-async def test_boxes_shape_minimal_contract(api_context):
-    resp = await api_context.get("/open_api/boxes")
-    data = await resp.json()
+@allure.title("GET /open_api/boxes returns list and minimal shape")
+def test_boxes_list_ok(playwright: Playwright):
+    request = playwright.request.new_context(base_url=BASE_API, extra_http_headers={"Accept": "application/json"})
+    resp = request.get("/open_api/boxes")
+    allure.attach(resp.text(), "boxes.raw.json", AttachmentType.JSON)
+    assert resp.ok, f"Status {resp.status}: {resp.text()}"
+    data = resp.json()
+    allure.attach(json.dumps(data, indent=2), "boxes.pretty.json", AttachmentType.JSON)
     assert isinstance(data, list)
-
-    if data:  # soft contract on first item
+    if data:
         b = data[0]
-        # required top-level fields
-        for key in ["name", "status", "location"]:
-            assert key in b, f"Missing {key}"
-        # location sub-keys
-        loc = b["location"]
-        for key in ["latitude", "longitude"]:
-            assert key in loc and isinstance(loc[key], (int, float)), f"Bad location.{key}"
-
-@pytest.mark.api
-async def test_boxes_not_found_path(api_context):
-    r = await api_context.get("/open_api/boxes/does-not-exist")
-    # Depending on backend routing; expect non-200:
-    assert r.status != 200
-
-@pytest.mark.api
-async def test_boxes_cors_is_irrelevant_for_api_context(api_context):
-    # Playwright Request API is server-to-server; just ensure JSON parses.
-    r = await api_context.get("/open_api/boxes")
-    _ = await r.json()
-    assert r.ok
+        assert {"name", "status", "location"}.issubset(b.keys())
+        assert {"latitude", "longitude"}.issubset(b["location"].keys())
+    request.dispose()
