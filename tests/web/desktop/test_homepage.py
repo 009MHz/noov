@@ -9,7 +9,7 @@ from allure import severity_level as severity
 @pytest.fixture(scope='function')
 async def home(page):
     home = HomePage(page)
-    await home.open("https://noovoleum.com")
+    await home.open()
     return home
 
 
@@ -40,22 +40,37 @@ class TestHomepage:
         await expect(home.apple_btn).to_have_attribute("href", re.compile(r"noovoleum\.onelink\.me"))
         await expect(home.android_btn).to_have_attribute("href", re.compile(r"noovoleum\.onelink\.me"))
 
+    @allure.title("Homepage Banner Steps validation")
+    @allure.feature("Home/ Process Banner")
+    @allure.severity(severity.CRITICAL)
+    async def test_homepage_process_steps(self, home):
+        allure.step("Verify the steps banner")
+
+        steps = [
+            (home.step1_image, home.step1_desc, "Step 1"),
+            (home.step2_image, home.step2_desc, "Step 2"),
+            (home.step3_image, home.step3_desc, "Step 3"),
+            (home.step4_image, home.step4_desc, "Step 4")
+        ]
+        
+        for image, desc, step_name in steps:
+            allure.step(f"Verify {step_name} content")
+            await expect(image).to_be_visible()
+            await expect(desc).to_be_visible()
+
+
     @allure.title("Homepage Contact Banner validation")
     @allure.feature("Home/ Contact Banner")
     @allure.severity(severity.CRITICAL)
-    async def test_homepage_form_submit(self, home):
-        allure.step("Navigate to contact section and verify form validation")
+    async def test_homepage_contact_section(self, home): 
+        allure.step("Verify submit form elements")
         await expect(home.header_submit).to_be_visible()
         await expect(home.input_name).to_be_visible()
         await expect(home.input_email).to_be_visible()
         await expect(home.input_message).to_be_visible()
         await expect(home.btn_send).to_be_visible()
-
-    @allure.title("Homepage Company Information validation")
-    @allure.feature("Home/ Company Information")
-    @allure.severity(severity.NORMAL)
-    async def test_homepage_company_information(self, home):
-        allure.step("Open homepage and verify company information")
+        
+        allure.step("Verify company information")
         await expect(home.info_logo).to_be_visible()
         await expect(home.company_sg_address).to_be_visible()
         await expect(home.company_id_address).to_be_visible()
