@@ -20,9 +20,7 @@ class Config:
             "headless": headless,
             "args": ["--start-maximized"]}
 
-        if mode == 'pipeline':
-            self.browser = await playwright[browser_type].launch(**launch_args)
-        elif mode == 'local':
+        if mode in ('pipeline', 'local'):
             self.browser = await playwright[browser_type].launch(**launch_args)
         elif mode == 'grid':
             server_url = "http://remote-playwright-server:4444"
