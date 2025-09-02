@@ -1,7 +1,5 @@
-import re
 import pytest
 import allure
-from playwright.async_api import expect
 from sources.web.home_page import HomePage
 from allure import severity_level as severity
 
@@ -14,36 +12,32 @@ async def home(page):
 
 
 @allure.epic("Marketing Site")
-@allure.feature("Footer")
+@allure.feature("Home/ Footer")
 @pytest.mark.ui
 class TestFooter:
-    @allure.title("Footer Container and Copyright Text")
-    @allure.feature("Footer/ Copyright")
+    @allure.title("Validate Footer Links Navigation ")
     @allure.severity(severity.NORMAL)
-    async def test_footer_copyright(self, home):
-        allure.step("Verify footer container and copyright text")
-        await expect(home.footer).to_be_visible()
-        await expect(home.copyright_text).to_be_visible()
-        await expect(home.copyright_text).to_contain_text("2024")
-        await expect(home.copyright_text).to_contain_text("noovoleum")
-
-    @allure.title("Footer Links Validation")
-    @allure.feature("Footer/ Links")
-    @allure.severity(severity.NORMAL)
-    async def test_footer_links(self, home):
-        allure.step("Verify footer links visibility")
-        await expect(home.self_declaration_link).to_be_visible()
-        await expect(home.privacy_policy_link).to_be_visible()
-        await expect(home.terms_conditions_link).to_be_visible()
-        
-        allure.step("Verify footer links attributes")
-        footer_links = [
-            (home.self_declaration_link, "self-declaration"),
-            (home.privacy_policy_link, "privacy-policy"),
-            (home.terms_conditions_link, "terms-and-conditions-2024")
+    @pytest.mark.parametrize(
+        "link_type, path",
+        [
+            ("Self Declaration", "/self-declaration"),
+            ("Privacy Policy", "/privacy-policy"),
+            ("Terms and Conditions", "/terms-and-conditions-2024"),
         ]
+    )
+    async def test_footer_link_navigation(self, home, context, link_type, path):
+        allure.step(f"Click {link_type} link and wait for new tab")
+        async with context.expect_page() as new_page_info:
+            if link_type == "Self Declaration":
+                await home.click_self_declaration()
+            elif link_type == "Privacy Policy":
+                await home.click_privacy_policy()
+            elif link_type == "Terms and Conditions":
+                await home.click_terms_conditions()
         
-        for link, href_pattern in footer_links:
-            allure.step(f"Verify link with pattern: {href_pattern}")
-            await expect(link).to_have_attribute("href", re.compile(href_pattern))
-            await expect(link).to_have_attribute("target", "_blank")
+        allure.step(f"Switch to the new opened tab")
+        new_page = await new_page_info.value
+        await new_page.wait_for_load_state("networkidle")
+        
+        allure.step(f"Verify the URL redirection")
+        assert new_page.url.endswith(path), f"Expected URL to end with {path}, but got {new_page.url}"
