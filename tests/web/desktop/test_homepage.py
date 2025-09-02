@@ -16,7 +16,6 @@ async def home(page):
 @allure.epic("Marketing Site")
 @allure.feature("Homepage")
 @pytest.mark.ui
-@pytest.mark.smoke
 class TestHomepage:
     @allure.title("Homepage Header validation")
     @allure.feature("Home/ Heading")
@@ -77,3 +76,14 @@ class TestHomepage:
         await expect(home.linkedin_link).to_have_attribute("href", re.compile(r"linkedin\.com/company/noovoleum"))
         await expect(home.instagram_link).to_have_attribute("href", re.compile(r"instagram\.com/noovoleumid"))
         await expect(home.email_link).to_be_visible()
+        
+    @allure.title("Homepage Footer validation")
+    @allure.feature("Home/ Footer")
+    @allure.severity(severity.MINOR)
+    async def test_homepage_footer_section(self, home): 
+        allure.step("Verify footer elements")
+        await expect(home.footer).to_be_visible()
+        await expect(home.copyright_text).to_be_visible()
+        await expect(home.self_declaration_link).to_have_attribute("href", re.compile(r"self-declaration"))
+        await expect(home.privacy_policy_link).to_have_attribute("href", re.compile(r"privacy-policy"))
+        await expect(home.terms_conditions_link).to_have_attribute("href", re.compile(r"terms-and-conditions-2024"))
