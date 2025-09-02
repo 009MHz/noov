@@ -16,10 +16,13 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    # Load environment variables from .env file first
+    load_dotenv(override=True)  # Force override existing env vars
+    
+    # Override with command line options
     os.environ["env"] = config.getoption('env')
     os.environ["mode"] = config.getoption('mode') or 'local'
     os.environ["headless"] = str(config.getoption('headless'))
-    load_dotenv(".env")
 
 
 @pytest.fixture()
@@ -32,7 +35,8 @@ async def playwright():
 async def browser(playwright):
     await runner.setup_browser(playwright)
     yield runner.browser
-    await runner.browser.close()
+    if runner.browser:
+        await runner.browser.close()
 
 
 @pytest.fixture()
@@ -65,6 +69,21 @@ async def super_auth(browser):
     yield page_instance
     await runner.capture_handler()
     await page_instance.close()
+
+
+@pytest.fixture(scope="function")
+async def api_request(playwright):
+    """Create a basic APIRequestContext for testing.
+    The actual URL and headers should be configured in the test files."""
+    context = None
+    try:
+        context = await playwright.request.new_context(
+            ignore_https_errors=True  # Useful for testing environments
+        )
+        yield context
+    finally:
+        if context:
+            await context.dispose()
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
