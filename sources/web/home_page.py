@@ -47,6 +47,14 @@ class HomePage:
         self.linkedin_link = page.get_by_role("link", name=" noovoleum")
         self.instagram_link = page.get_by_role('link').filter(has_text='noovoleumid')
         self.email_link = page.get_by_role('link').filter(has_text='contact@noovoleum.com')
+        
+        # Footer elements
+        self.footer = page.locator('.copyright')
+        self.copyright_text = page.get_by_text('© 2024 noovoleum. All right reserved.')
+        self.self_declaration_link = page.get_by_role('link', name='Self Declaration')
+        self.privacy_policy_link = page.get_by_role('link', name='Privacy policy')
+        self.terms_conditions_link = page.get_by_role('link', name='Terms and Conditions')
+        
 
     # ---------- internals ----------
 
@@ -80,3 +88,15 @@ class HomePage:
 
     async def click_send_message(self):
         await self.btn_send.click()
+        
+    async def click_language_toggle(self):
+        await self.language_toggle.click()
+        
+    async def click_main_logo(self):
+        await self.logo.click()
+
+    async def click_banner_apple_btn(self):
+        await self.apple_btn.click()
+
+    async def click_banner_android_btn(self):
+        await self.android_btn.click()
