@@ -20,35 +20,42 @@ async def home(page):
 @pytest.mark.asyncio
 @pytest.mark.smoke
 class TestHomepage:
-    @pytest.mark.smoke
-    @allure.title("First State Login Page Validation")
-    @allure.feature("Login/ Email", "Login/ Google")
+    @allure.title("Homepage Header validation")
+    @allure.feature("Home/ Heading")
     @allure.severity(severity.NORMAL)
     async def test_homepage_logo_and_heading(self, home):
-        allure.step("Open homepage and verify key UI is visible")
+        allure.step("Verify key header UI")
         await expect(home.logo).to_be_visible()
         await expect(home.hero_text).to_be_visible()
-
-    async def test_homepage_language_toggle(self, home):
-        allure.step("Open homepage and verify language toggle is visible")
+        
+        allure.step("Verify language toggle")
         await expect(home.language_toggle).to_be_visible()
         await expect(home.language_toggle).to_contain_text("Indonesian")
         await expect(home.language_toggle).to_be_enabled()
 
+    @allure.title("Homepage Mobile Banner validation")
+    @allure.feature("Home/ Mobile Banner")
+    @allure.severity(severity.NORMAL)
     async def test_homepage_mobile_banner(self, home):
-        allure.step("Open homepage and verify mobile app banner is visible")
+        allure.step("Verify mobile app banner")
         await expect(home.banner_mobile).to_be_visible()
         await expect(home.apple_btn).to_have_attribute("href", re.compile(r"noovoleum\.onelink\.me"))
         await expect(home.android_btn).to_have_attribute("href", re.compile(r"noovoleum\.onelink\.me"))
 
+    @allure.title("Homepage Contact Banner validation")
+    @allure.feature("Home/ Contact Banner")
+    @allure.severity(severity.CRITICAL)
     async def test_homepage_form_submit(self, home):
-        allure.step("Open homepage contact section and verify form validation")
+        allure.step("Navigate to contact section and verify form validation")
         await expect(home.header_submit).to_be_visible()
         await expect(home.input_name).to_be_visible()
         await expect(home.input_email).to_be_visible()
         await expect(home.input_message).to_be_visible()
         await expect(home.btn_send).to_be_visible()
 
+    @allure.title("Homepage Company Information validation")
+    @allure.feature("Home/ Company Information")
+    @allure.severity(severity.NORMAL)
     async def test_homepage_company_information(self, home):
         allure.step("Open homepage and verify company information")
         await expect(home.info_logo).to_be_visible()
