@@ -1,13 +1,14 @@
-import re
-
 from playwright.async_api import Page, expect
-
+import re
 
 class HomePage:
     def __init__(self, page: Page):
         self.page = page
-
-        # Header
+        
+        # Loader element
+        self.loader = page.locator(".loader-container")
+        
+        # Header elements
         self.language_toggle = page.locator("#languageToggle")
         self.logo = page.get_by_alt_text("noovoleum logo")
         self.hero_text = page.get_by_text("Making everybody a green energy champion")
@@ -35,16 +36,13 @@ class HomePage:
         self.instagram_link = page.get_by_role('link').filter(has_text='noovoleumid')
         self.email_link = page.get_by_role('link').filter(has_text='contact@noovoleum.com')
 
-
     async def open(self, base_url: str = "https://noovoleum.com"):
-        # Prefer network idle only if app is SPA-heavy; otherwise 'load' is fine.
+        try:
+            await expect(self.loader).to_be_hidden(timeout=10000)
+        except:
+            pass
+        
         await self.page.goto(base_url, wait_until="domcontentloaded")
-        return self
-
-    async def open_contact(self, base_url: str = "https://noovoleum.com#contact"):
-        await self.page.goto(base_url, wait_until="domcontentloaded")
-        # Ensure contact form is ready before interacting
-        await expect(self.btn_send).to_be_enabled()
         return self
 
     async def fill_contact_form(self, name: str, email: str, message: str):
@@ -52,10 +50,6 @@ class HomePage:
         await self.input_email.fill(email)
         await self.input_message.fill(message)
 
-    async def submit_contact(self):
+    async def click_send_message(self):
         await self.btn_send.click()
 
-    async def expect_validation_errors(self):
-        await expect(self.err_name).to_be_visible()
-        await expect(self.err_email).to_be_visible()
-        await expect(self.err_message).to_be_visible()

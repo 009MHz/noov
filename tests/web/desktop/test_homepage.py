@@ -1,5 +1,4 @@
 import re
-
 import pytest
 import allure
 from playwright.async_api import expect
@@ -17,7 +16,6 @@ async def home(page):
 @allure.epic("Marketing Site")
 @allure.feature("Homepage")
 @pytest.mark.ui
-@pytest.mark.asyncio
 @pytest.mark.smoke
 class TestHomepage:
     @allure.title("Homepage Header validation")
