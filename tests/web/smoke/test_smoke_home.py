@@ -1,4 +1,5 @@
-import pytest, allure
+import pytest
+import allure
 import re
 from playwright.async_api import expect
 from sources.web.home_page import HomePage

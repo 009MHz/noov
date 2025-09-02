@@ -50,7 +50,6 @@ class TestContactForm:
 
     @allure.title("Contact Form - Successful Submission")
     @allure.severity(severity.CRITICAL)
-    @pytest.mark.asyncio
     async def test_contact_form_submit_happy_path(self, home):
         allure.step("Fill form with valid data")
         await home.fill_contact_form(
