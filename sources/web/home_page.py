@@ -100,3 +100,13 @@ class HomePage:
 
     async def click_banner_android_btn(self):
         await self.android_btn.click()
+        
+    # Footer Actions
+    async def click_self_declaration(self):
+        return await self.self_declaration_link.click()
+        
+    async def click_privacy_policy(self):
+        return await self.privacy_policy_link.click()
+        
+    async def click_terms_conditions(self):
+        return await self.terms_conditions_link.click()
