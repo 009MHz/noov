@@ -25,13 +25,13 @@ def pytest_configure(config):
     os.environ["headless"] = str(config.getoption('headless'))
 
 
-@pytest.fixture()
+@pytest.fixture
 async def playwright():
     async with async_playwright() as playwright:
         yield playwright
 
 
-@pytest.fixture()
+@pytest.fixture
 async def browser(playwright):
     await runner.setup_browser(playwright)
     yield runner.browser
@@ -40,11 +40,18 @@ async def browser(playwright):
 
 
 @pytest.fixture()
-async def page(browser):
-    page_instance = await runner.setup_page()
-    yield page_instance
+async def context(browser):
+    context = await runner.context_init()
+    yield context
+    await context.close()
+
+
+@pytest.fixture()
+async def page(context):
+    page = await context.new_page()
+    yield page
     await runner.capture_handler()
-    await page_instance.close()
+    await page.close()
 
 
 @pytest.fixture()
