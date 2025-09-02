@@ -6,12 +6,24 @@ class HomePage:
         self.page = page
         
         # Loader element
-        self.loader = page.locator(".loader-container")
+        self.preloader = page.locator(".preloader")
+        self.loader_container = page.locator(".loader-container")
         
         # Header elements
         self.language_toggle = page.locator("#languageToggle")
         self.logo = page.get_by_alt_text("noovoleum logo")
         self.hero_text = page.get_by_text("Making everybody a green energy champion")
+
+        # Banner Processes
+        self.step1_image = page.get_by_role('img', name='step 1')
+        self.step2_image = page.get_by_role('img', name='step 2')
+        self.step3_image = page.get_by_role('img', name='step 3')
+        self.step4_image = page.get_by_role('img', name='step 4')
+
+        self.step1_desc = page.get_by_text("Collect previously utilized")
+        self.step2_desc = page.get_by_text("Find the nearest UCO")
+        self.step3_desc = page.get_by_text("Deposit your Used Cooking Oil")
+        self.step4_desc = page.get_by_text("Receive instant credit")
 
         # Banner Mobile
         self.banner_mobile = page.locator("#about")
@@ -36,13 +48,29 @@ class HomePage:
         self.instagram_link = page.get_by_role('link').filter(has_text='noovoleumid')
         self.email_link = page.get_by_role('link').filter(has_text='contact@noovoleum.com')
 
-    async def open(self, base_url: str = "https://noovoleum.com"):
+    # ---------- internals ----------
+
+    async def _disable_animations_and_reveal(self):
+        await self.page.add_style_tag(content="""
+            * { animation: none !important; transition: none !important; }
+            .wow { visibility: visible !important; }
+        """)
+
+    async def _wait_preloader_gone(self, timeout: int = 8000):
         try:
-            await expect(self.loader).to_be_hidden(timeout=10000)
-        except:
-            pass
-        
-        await self.page.goto(base_url, wait_until="domcontentloaded")
+            await self.preloader.wait_for(state="hidden", timeout=timeout)
+        except Exception:
+            try:
+                await self.loader_container.wait_for(state="hidden", timeout=timeout // 2)
+            except Exception:
+                pass
+
+    async def open(self, base_url: str = "https://noovoleum.com"):
+        await self.page.goto(base_url)
+        await self.page.wait_for_load_state("load")
+        await self._wait_preloader_gone()
+        await self._disable_animations_and_reveal()
+
         return self
 
     async def fill_contact_form(self, name: str, email: str, message: str):
@@ -52,4 +80,3 @@ class HomePage:
 
     async def click_send_message(self):
         await self.btn_send.click()
-
