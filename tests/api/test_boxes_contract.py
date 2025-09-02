@@ -1,10 +1,11 @@
-import pytest
+import pytest, allure
 
 @pytest.mark.api
-def test_boxes_contract_minimal(api_request):
-    r = api_request.get("/open_api/boxes")
+@allure.title("Boxes contract — minimal keys present on first item")
+async def test_boxes_contract_minimal(api_request):
+    r = await api_request.get("/open_api/boxes")
     assert r.ok
-    data = r.json()
+    data = await r.json()
     assert isinstance(data, list)
     if data:
         b = data[0]
