@@ -1,116 +1,117 @@
-import os
-import pathlib
-import contextlib
-from typing import Dict, Any
-
 import pytest
+import os
+import asyncio
 import allure
+from utils.browser_config import Config
+from playwright.async_api import async_playwright
+from dotenv import load_dotenv
 
-# Directories
-REPORTS_DIR = pathlib.Path("reports")
-REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+runner = Config()
 
-# Defaults
-VIEWPORT = {"width": 1920, "height": 1080}
 
-# ---------------- CLI option ----------------
-def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption(
-        "--headless",
-        action="store_true",
-        help="Force headless mode (defaults to headless on CI anyway).",
-    )
+def pytest_addoption(parser):
+    parser.addoption('--env', action='store', default='test', help='Specify the test environment')
+    parser.addoption('--mode', help='Specify the execution mode: local, grid, pipeline', default='local')
+    parser.addoption('--headless', action='store_true', default=False, help='Run tests in headless mode')
 
-# ---------------- Session-level helpers ----------------
-@pytest.fixture(scope="session")
-def is_headless(pytestconfig) -> bool:
-    """
-    Headless resolution order:
-    1) --headless flag
-    2) CI=true environment => headless
-    3) default: headed locally (False)
-    """
-    if pytestconfig.getoption("--headless"):
-        return True
-    if os.getenv("CI", "").lower() in ("1", "true", "yes"):
-        return True
-    return False
 
-# ---------------- Browser / Context / Page ----------------
-# Use pytest-playwright's built-in 'playwright' and 'browser_name' fixtures.
-# We create our own browser based on headless + per-browser launch args.
-@pytest.fixture(scope="session")
-def browser(playwright, browser_name, is_headless):
-    launch_args: Dict[str, Any] = {"headless": is_headless}
-    if browser_name == "chromium":
-        # Helpful flags for CI stability
-        launch_args.setdefault("args", [])
-        launch_args["args"].extend([
-            "--start-maximized",
-            "--disable-dev-shm-usage",
-            "--no-sandbox",
-        ])
-    b = getattr(playwright, browser_name).launch(**launch_args)
-    yield b
-    b.close()
+def pytest_configure(config):
+    # Load environment variables from .env file first
+    load_dotenv(override=True)  # Force override existing env vars
+    
+    # Override with command line options
+    os.environ["env"] = config.getoption('env')
+    os.environ["mode"] = config.getoption('mode') or 'local'
+    os.environ["headless"] = str(config.getoption('headless'))
 
-@pytest.fixture(scope="function")
-def context(browser, request):
-    ctx = browser.new_context(
-        viewport=VIEWPORT,             # Keep a fixed viewport for consistency
-        record_video_dir=None,         # Add a dir if you want videos
-        ignore_https_errors=True,      # Toggle if your env needs it
-    )
 
-    # Start tracing only on retries (execution_count > 1 is set by rerun plugin)
-    tracing_started = False
-    execution_count = getattr(request.node, "execution_count", 1)
-    if execution_count > 1:
-        ctx.tracing.start(screenshots=True, snapshots=True, sources=False)
-        tracing_started = True
+@pytest.fixture
+async def playwright():
+    async with async_playwright() as playwright:
+        yield playwright
 
-    yield ctx
 
-    # Stop/attach tracing on teardown if started
-    if tracing_started:
-        trace_dir = pathlib.Path(".pytest-traces")
-        trace_dir.mkdir(exist_ok=True, parents=True)
-        trace_path = trace_dir / f"{request.node.name}-{browser.browser_type.name}.zip"
-        with contextlib.suppress(Exception):
-            ctx.tracing.stop(path=str(trace_path))
-            if trace_path.exists():
-                allure.attach.file(
-                    str(trace_path),
-                    name=f"trace-{request.node.name}-{browser.browser_type.name}",
-                    attachment_type=allure.attachment_type.ZIP,
-                )
-    ctx.close()
+@pytest.fixture
+async def browser(playwright):
+    await runner.setup_browser(playwright)
+    yield runner.browser
+    if runner.browser:
+        await runner.browser.close()
+
+
+@pytest.fixture()
+async def context(browser):
+    context = await runner.context_init()
+    yield context
+    await context.close()
+
+
+@pytest.fixture()
+async def page(context):
+    page = await context.new_page()
+    yield page
+    await runner.capture_handler()
+    await page.close()
+
+
+@pytest.fixture()
+async def user_auth(browser):
+    page_instance = await runner.setup_auth_page("user")
+    yield page_instance
+    await runner.capture_handler()
+    await page_instance.close()
+
+
+@pytest.fixture()
+async def admin_auth(browser):
+    page_instance = await runner.setup_auth_page("admin")
+    yield page_instance
+    await runner.capture_handler()
+    await page_instance.close()
+
+
+@pytest.fixture()
+async def super_auth(browser):
+    page_instance = await runner.setup_auth_page("super_admin")
+    yield page_instance
+    await runner.capture_handler()
+    await page_instance.close()
+
 
 @pytest.fixture(scope="function")
-def page(context):
-    p = context.new_page()
-    # Best-effort maximize in headed; ignored in headless
-    with contextlib.suppress(Exception):
-        p.evaluate("() => { try { window.moveTo(0,0); window.resizeTo(screen.width, screen.height); } catch(e){} }")
-    yield p
-    p.close()
+async def api_request(playwright):
+    """Create a basic APIRequestContext for testing.
+    The actual URL and headers should be configured in the test files."""
+    context = None
+    try:
+        context = await playwright.request.new_context(
+            ignore_https_errors=True  # Useful for testing environments
+        )
+        yield context
+    finally:
+        if context:
+            await context.dispose()
 
-# ---------------- Failure screenshot hook ----------------
-@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
 
-    # Only after the test body and only on failure
-    if rep.when == "call" and rep.failed:
-        page = item.funcargs.get("page")
-        browser_name = item.funcargs.get("browser_name", "browser")
-        if page:
-            png_path = REPORTS_DIR / f"{item.name}-{browser_name}.png"
-            with contextlib.suppress(Exception):
-                page.screenshot(path=str(png_path), full_page=False)
-                allure.attach.file(
-                    str(png_path),
-                    name=f"screenshot-{item.name}-{browser_name}",
-                    attachment_type=allure.attachment_type.PNG,
-                )
+    if rep.when == "call":  # if rep.when == "call" and rep.failed: # config on fail only
+        screenshot_path = os.path.join("reports/screenshots", f"{item.name}.png")
+        os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
+
+        try:
+            page = item.funcargs.get('page') or item.funcargs.get('auth_page')
+            if page:
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(page.screenshot(path=screenshot_path, full_page=True))
+                with open(screenshot_path, "rb") as image_file:
+                    allure.attach(
+                        image_file.read(),
+                        name="screenshot",
+                        attachment_type=allure.attachment_type.PNG
+                    )
+        except Exception as e:
+            print(f"Failed to take screenshot: {e}")

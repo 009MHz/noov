@@ -1,23 +1,35 @@
-import json
 import pytest
 import allure
+import json
 from allure_commons.types import AttachmentType
-from playwright.sync_api import Playwright
-
-BASE_API = "https://api.noovoleum.com"
+from utils.api_config import api_config
 
 @pytest.mark.api
 @allure.title("GET /open_api/boxes returns list and minimal shape")
-def test_boxes_list_ok(playwright: Playwright):
-    request = playwright.request.new_context(base_url=BASE_API, extra_http_headers={"Accept": "application/json"})
-    resp = request.get("/open_api/boxes")
-    allure.attach(resp.text(), "boxes.raw.json", AttachmentType.JSON)
-    assert resp.ok, f"Status {resp.status}: {resp.text()}"
-    data = resp.json()
+async def test_boxes_list_ok(api_request):
+    url = api_config.get_url("open_api/boxes")
+    response = await api_request.get(url)
+    
+    raw_response = await response.text()
+    allure.attach(raw_response, "boxes.raw.json", AttachmentType.JSON)
+    
+    # Assert response status
+    assert response.ok, f"Expected successful response, got status {response.status}"
+    assert response.status == 200, f"Expected status 200, got {response.status}"
+    
+    # Parse and validate response data
+    data = await response.json()
     allure.attach(json.dumps(data, indent=2), "boxes.pretty.json", AttachmentType.JSON)
-    assert isinstance(data, list)
+    
+    # Validate response structure
+    assert isinstance(data, list), "Response should be a list"
+    
     if data:
-        b = data[0]
-        assert {"name", "status", "location"}.issubset(b.keys())
-        assert {"latitude", "longitude"}.issubset(b["location"].keys())
-    request.dispose()
+        box = data[0]
+        # Validate box structure
+        assert {"name", "status", "location"}.issubset(box.keys()), \
+            f"Missing required fields. Got: {box.keys()}"
+            
+        # Validate location structure
+        assert {"latitude", "longitude"}.issubset(box["location"].keys()), \
+            f"Missing location coordinates. Got: {box['location'].keys()}"
