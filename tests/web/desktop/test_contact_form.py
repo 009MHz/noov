@@ -2,45 +2,45 @@ import pytest
 import allure
 from playwright.async_api import expect
 from sources.web.home_page import HomePage
+from allure import severity_level as severity
 
 CONTACT_URL = "https://noovoleum.com#contact"
 
-@allure.epic("Marketing Site")
-@allure.feature("Contact Form")
-@pytest.mark.asyncio
-async def test_contact_form_shows_validation_when_empty_submit(page):
+@pytest.fixture(scope='function')
+async def contact_page(page):
     home = HomePage(page)
-
-    with allure.step("Open Contact section"):
-        await home.open_contact(CONTACT_URL)
-
-    with allure.step("Submit without filling any fields"):
-        await home.submit_contact()
-
-    with allure.step("Expect validation errors on all required fields"):
-        await home.expect_validation_errors()
-
+    await home.open_contact(CONTACT_URL)
+    return home
 
 @allure.epic("Marketing Site")
 @allure.feature("Contact Form")
-@pytest.mark.asyncio
-async def test_contact_form_submit_happy_path(page):
-    home = HomePage(page)
+@pytest.mark.ui
+@pytest.mark.smoke
+class TestContactForm:
+    @allure.title("Contact Form Validation - Empty Submit")
+    @allure.severity(severity.NORMAL)
+    @pytest.mark.asyncio
+    async def test_contact_form_shows_validation_when_empty_submit(self, contact_page):
+        allure.step("Submit form without filling any fields")
+        await contact_page.submit_contact()
 
-    with allure.step("Open Contact section"):
-        await home.open_contact(CONTACT_URL)
+        allure.step("Verify validation errors on all required fields")
+        await contact_page.expect_validation_errors()
 
-    with allure.step("Fill valid inputs"):
-        await home.fill_contact_form(
+    @allure.title("Contact Form - Successful Submission")
+    @allure.severity(severity.CRITICAL)
+    @pytest.mark.asyncio
+    async def test_contact_form_submit_happy_path(self, contact_page):
+        allure.step("Fill form with valid data")
+        await contact_page.fill_contact_form(
             name="Haris Satriyo",
             email="qa@example.com",
             message="Hello team, this is a test message from Playwright async.",
         )
 
-    with allure.step("Submit the form"):
-        await home.submit_contact()
+        allure.step("Submit the completed form")
+        await contact_page.submit_contact()
 
-    with allure.step("Verify success indicator (adjust selector/text to your app)"):
-        # Replace with your actual success state (toast/snackbar/alert)
-        success = page.get_by_text("Message sent").first
+        allure.step("Verify success message appears")
+        success = contact_page.page.get_by_text("Message sent").first
         await expect(success).to_be_visible()
