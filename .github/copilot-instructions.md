@@ -60,7 +60,7 @@ from playwright.async_api import Page, expect
 #### Assertions
 - **Test Script Location**: Keep all assertions in test scripts, NOT in page objects
 - **Separation of Concerns**: Page objects should return elements/data; tests should verify behavior
-- **Web-first**: Use `expect(page).to_have_title()`, `expect(locator).to_have_text()`
+- **Priority**: Prioritize the `expect` syntax from playwright before using any assertions
 - **Counts**: `expect(locator).to_have_count()` for element quantities
 - **Text Matching**: `to_have_text()` (exact) vs `to_contain_text()` (partial)
 - **Navigation**: `expect(page).to_have_url()` for URL verification
