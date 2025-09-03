@@ -35,7 +35,7 @@ You are assisting with building a comprehensive test automation framework with t
 - Configure for multiple browsers and devices
 
 ### Page Object Model
-- Create base page class with common methods
+- Create a reusable and clean page object structure
 - Implement platform-specific page classes
 - Use composition over inheritance where appropriate
 - Encapsulate element interactions
@@ -72,10 +72,13 @@ When generating code, prioritize:
 - **Assertions**: Use auto-retrying web-first assertions via the expect API (e.g., expect(page).to_have_title(...)). Avoid expect(locator).to_be_visible() unless specifically testing for a change in an element's visibility, as more specific assertions are generally more reliable.
 - **Timeouts**: Rely on Playwright's built-in auto-waiting mechanisms. Avoid hard-coded waits or increased default timeouts.
 - **Clarity**: Use descriptive test titles (e.g., def test_navigation_link_works():) that clearly state their intent. Add comments only to explain complex logic, not to describe simple actions like "click a button."
+- **Modularity**: Break down large tests into smaller, focused tests. Each test should ideally cover a single feature or user story.
+- **Maintainability**: Write tests that are easy to understand and maintain. Use helper functions and fixtures to reduce code duplication.
+- **Verification**: Run the test for current changes and ensure all changes are work properly.
 
 ### Test Structure & Organization
 - **Imports**: Every test file should begin with from playwright.async_api import Page, expect for async implementation
-- **Fixtures**: Use the page: Page fixture as an argument in your test functions to interact with the browser page
+- **Fixtures**: Use the page: Page fixture as an argument in your test functions to interact with the browser page that centralized under the utils directory
 - **Setup**: Place navigation steps like page.goto() at the beginning of each test function. For setup actions shared across multiple tests, use standard Pytest fixtures
 - **Location**: Store test files in a dedicated tests/ directory organized by platform (web/, mobile/, api/)
 - **Naming**: Test files must follow the test_<feature-or-page>.py naming convention
@@ -92,5 +95,3 @@ When generating code, prioritize:
 2. **Debug Failures**: Analyze test failures and identify root causes
 3. **Parallel Execution**: Configure pytest-xdist for concurrent test runs
 4. **Cross-Platform**: Matrix testing for different browsers and devices
-
-### Example Implementation
