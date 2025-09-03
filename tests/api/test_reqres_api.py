@@ -4,7 +4,7 @@ from playwright.async_api import APIRequestContext
 from sources.api.clients.reqres_client import ReqresClient
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 async def reqres_api(api_request: APIRequestContext):
     return ReqresClient(api_request)
 
@@ -18,16 +18,20 @@ class TestReqresAPI:
     @allure.story("Users")
     @allure.severity(allure.severity_level.CRITICAL)
     async def test_get_users_success(self, reqres_api: ReqresClient):
+        allure.step("Send GET request to users endpoint")
         response = await reqres_api.get_users(page=1)
 
+        allure.step("Validate response status")
         assert response.ok
         assert response.status == 200
 
+        allure.step("Validate response structure")
         data = await response.json()
         assert "data" in data
         assert isinstance(data["data"], list)
         assert len(data["data"]) > 0
 
+        allure.step("Validate user data fields")
         first_user = data["data"][0]
         assert "id" in first_user
         assert "email" in first_user
@@ -38,14 +42,18 @@ class TestReqresAPI:
     @allure.story("Users")
     @allure.severity(allure.severity_level.NORMAL)
     async def test_get_single_user_success(self, reqres_api: ReqresClient):
+        allure.step("Send GET request for specific user ID")
         response = await reqres_api.get_user_by_id(2)
 
+        allure.step("Validate response status")
         assert response.ok
         assert response.status == 200
 
+        allure.step("Validate response structure")
         data = await response.json()
         assert "data" in data
 
+        allure.step("Validate user data integrity")
         user = data["data"]
         assert user["id"] == 2
         assert "email" in user
@@ -57,11 +65,14 @@ class TestReqresAPI:
     @allure.story("Users")
     @allure.severity(allure.severity_level.NORMAL)
     async def test_create_user_success(self, reqres_api: ReqresClient):
+        allure.step("Send POST request to create new user")
         response = await reqres_api.create_user("John", "Developer")
 
+        allure.step("Validate creation response status")
         assert response.ok
         assert response.status == 201
 
+        allure.step("Validate created user data")
         data = await response.json()
         assert data["name"] == "John"
         assert data["job"] == "Developer"
@@ -72,11 +83,14 @@ class TestReqresAPI:
     @allure.story("Users")
     @allure.severity(allure.severity_level.NORMAL)
     async def test_update_user_success(self, reqres_api: ReqresClient):
+        allure.step("Send PUT request to update user")
         response = await reqres_api.update_user(2, "Jane", "Manager")
 
+        allure.step("Validate update response status")
         assert response.ok
         assert response.status == 200
 
+        allure.step("Validate updated user data")
         data = await response.json()
         assert data["name"] == "Jane"
         assert data["job"] == "Manager"
@@ -86,8 +100,10 @@ class TestReqresAPI:
     @allure.story("Users")
     @allure.severity(allure.severity_level.NORMAL)
     async def test_delete_user_success(self, reqres_api: ReqresClient):
+        allure.step("Send DELETE request for user")
         response = await reqres_api.delete_user(2)
 
+        allure.step("Validate deletion response status")
         assert response.ok
         assert response.status == 204
 
@@ -95,16 +111,20 @@ class TestReqresAPI:
     @allure.story("Resources")
     @allure.severity(allure.severity_level.NORMAL)
     async def test_get_resources_success(self, reqres_api: ReqresClient):
+        allure.step("Send GET request to resources endpoint")
         response = await reqres_api.get_resources()
 
+        allure.step("Validate response status")
         assert response.ok
         assert response.status == 200
 
+        allure.step("Validate response structure")
         data = await response.json()
         assert "data" in data
         assert isinstance(data["data"], list)
         assert len(data["data"]) > 0
 
+        allure.step("Validate resource data fields")
         first_resource = data["data"][0]
         assert "id" in first_resource
         assert "name" in first_resource
@@ -115,14 +135,18 @@ class TestReqresAPI:
     @allure.story("Resources")
     @allure.severity(allure.severity_level.NORMAL)
     async def test_get_single_resource_success(self, reqres_api: ReqresClient):
+        allure.step("Send GET request for specific resource ID")
         response = await reqres_api.get_resource_by_id(2)
 
+        allure.step("Validate response status")
         assert response.ok
         assert response.status == 200
 
+        allure.step("Validate response structure")
         data = await response.json()
         assert "data" in data
 
+        allure.step("Validate resource data integrity")
         resource = data["data"]
         assert resource["id"] == 2
         assert "name" in resource
@@ -134,11 +158,14 @@ class TestReqresAPI:
     @allure.story("Authentication")
     @allure.severity(allure.severity_level.CRITICAL)
     async def test_login_success(self, reqres_api: ReqresClient):
+        allure.step("Send POST request for user authentication")
         response = await reqres_api.login_user("eve.holt@reqres.in", "cityslicka")
 
+        allure.step("Validate authentication response status")
         assert response.ok
         assert response.status == 200
 
+        allure.step("Validate authentication token")
         data = await response.json()
         assert "token" in data
         assert isinstance(data["token"], str)
@@ -148,11 +175,14 @@ class TestReqresAPI:
     @allure.story("Authentication")
     @allure.severity(allure.severity_level.NORMAL)
     async def test_register_success(self, reqres_api: ReqresClient):
+        allure.step("Send POST request for user registration")
         response = await reqres_api.register_user("eve.holt@reqres.in", "pistol")
 
+        allure.step("Validate registration response status")
         assert response.ok
         assert response.status == 200
 
+        allure.step("Validate registration data")
         data = await response.json()
         assert "id" in data
         assert "token" in data

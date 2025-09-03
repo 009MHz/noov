@@ -5,7 +5,7 @@ from sources.api.__base import BaseService
 from sources.api.clients.noovo_home_client import HomeClient
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 async def noovo_api(api_request: APIRequestContext):
     api_client = BaseService(api_request)
     return HomeClient(api_client)
@@ -38,11 +38,14 @@ class TestNoovoAPI:
     @allure.story("Get Noovo List")
     @allure.severity(allure.severity_level.CRITICAL)
     async def test_noovo_list_success(self, noovo_api: HomeClient):
+        allure.step("Send GET request to noovo API")
         response, data, _ = await noovo_api.get_parsed_response()
 
+        allure.step("Validate response status and content type")
         self._assert_response_ok(response)
         self._assert_json_content_type(noovo_api, response)
 
+        allure.step("Validate response structure")
         response, noovo_data, validation_errors = await noovo_api.get_validated_data()
 
         assert (
@@ -53,6 +56,7 @@ class TestNoovoAPI:
         ), f"Expected list response, got {type(noovo_data)}"
 
         if noovo_data:
+            allure.step("Validate first item data structure")
             response, first_item = await noovo_api.get_first_item()
 
             assert first_item is not None, "First item should not be None"
@@ -64,10 +68,10 @@ class TestNoovoAPI:
     async def test_nonexistent_item_error(self, noovo_api: HomeClient):
         nonexistent_id = "non-existent-noovo-id-12345"
 
-        # Action: Request non-existent item
+        allure.step("Send GET request for non-existent item")
         response = await noovo_api.get_noovo_by_id(nonexistent_id)
 
-        # Assertions: Validate error response
+        allure.step("Validate error response")
         assert response.status in [
             404,
             400,
@@ -80,14 +84,17 @@ class TestNoovoAPI:
     @allure.story("Data Validation")
     @allure.severity(allure.severity_level.NORMAL)
     async def test_coordinates_validation(self, noovo_api: HomeClient):
+        allure.step("Get noovo data for coordinate validation")
         response, noovo_data, validation_errors = await noovo_api.get_validated_data()
 
+        allure.step("Validate response and data structure")
         self._assert_response_ok(response)
         assert (
             not validation_errors
         ), f"Structure validation errors: {validation_errors}"
         assert isinstance(noovo_data, list), "Response should be a list"
 
+        allure.step("Validate coordinates for all items")
         for i, item in enumerate(noovo_data):
             latitude, longitude, coord_errors = noovo_api.extract_coordinates(item)
 
@@ -105,10 +112,12 @@ class TestNoovoAPI:
     async def test_response_time_performance(self, noovo_api: HomeClient):
         max_response_time = 5.0
 
+        allure.step("Measure API response time")
         response, _, response_time = await noovo_api.get_parsed_response(
             measure_time=True
         )
 
+        allure.step("Validate response and performance")
         self._assert_response_ok(response)
         assert (
             response_time < max_response_time
