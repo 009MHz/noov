@@ -125,8 +125,7 @@ class Config:
         if not self.session_handler:
             raise RuntimeError("Session handler not initialized.")
 
-        session_state = await self.session_handler.create_session(auth_mode)
-        context = await self.context_init(session_state, auth_mode, device_name)
+        context = await self.context_init(storage_state=session_state, user_type=auth_mode, device_name=device_name)
         if context:
             self.page = await context.new_page()
             return self.page
