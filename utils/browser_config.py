@@ -107,7 +107,6 @@ class Config:
             if session_state:
                 context_options["storage_state"] = session_state
 
-
         for attempt in range(3):
             try:
                 return await self.browser.new_context(**context_options)
@@ -145,6 +144,7 @@ class Config:
             screenshot_path = f"reports/screenshots/{await self.page.title()}.png"
             os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
             await self.page.screenshot(path=screenshot_path, full_page=True)
+
 
 class ContextManager:
     """Handles browser context creation and management."""
