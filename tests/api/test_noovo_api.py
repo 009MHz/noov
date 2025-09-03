@@ -19,9 +19,6 @@ class TestNoovoAPI:
     def _assert_response_ok(self, response, context: str = ""):
         prefix = f"{context}: " if context else ""
         assert (
-            response.ok
-        ), f"{prefix}Expected successful response, got status {response.status}"
-        assert (
             response.status == 200
         ), f"{prefix}Expected status 200, got {response.status}"
 
