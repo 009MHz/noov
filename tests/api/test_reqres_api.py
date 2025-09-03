@@ -4,7 +4,7 @@ from playwright.async_api import APIRequestContext
 from sources.api.clients.reqres_client import ReqresClient
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 async def reqres_api(api_request: APIRequestContext):
     return ReqresClient(api_request)
 
