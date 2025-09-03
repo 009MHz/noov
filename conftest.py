@@ -33,7 +33,7 @@ async def playwright():
         yield playwright
 
 
-@pytest.fixture(scope="function") 
+@pytest.fixture(scope="function")
 async def runner(playwright):
     """Function-scoped runner instance for parallel execution safety."""
     runner_instance = Config()
