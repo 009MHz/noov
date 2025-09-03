@@ -1,97 +1,100 @@
 # Copilot Instructions for Test Automation Framework
 
-## Context
-You are assisting with building a comprehensive test automation framework with the following specifications:
+## Framework Stack
+- **Language**: Python with async/await
+- **Testing**: Playwright (Web/API), Appium (Mobile), Locust (Performance)
+- **Pattern**: Page Object Model (POM)
+- **Reporting**: Allure with GitHub Pages hosting
+- **CI/CD**: GitHub Actions with matrix testing
 
-**Stack:**
-- Language: Python
-- UI/E2E Testing: Playwright (async methods, modern locators)
-- API Testing: Playwright (async method)
-- Performance Testing: locust - python
-- Mobile Testing: Android & iOS automation (Appium)
-- Test Pattern: Page Object Model (POM)
-- Reporting: Allure
-- CI/CD: GitHub Actions
-- Report Hosting: GitHub Pages
+## Core Principles
+1. **Scalability**: Multi-platform support (Web, Mobile, API)
+2. **Modularity**: Clear separation of concerns with clean abstractions
+3. **Maintainability**: Modern locators, auto-waiting, comprehensive documentation
+4. **Quality**: Type hints, error handling, parallel execution
 
-## Key Principles
-1. **Scalability**: Design for easy expansion across platforms
-2. **Modularity**: Separate concerns with clear abstractions
-3. **Maintainability**: Follow POM pattern and clean code practices
-4. **Modern Approach**: Use async/await, modern Playwright locators
-5. **Cross-Platform**: Support Web, Mobile Web, Android, iOS, API
+## Development Standards
 
-## Code Generation Guidelines
+### Project Structure
+```
+tests/
+├── web/          # Web UI tests
+├── mobile/       # Mobile app tests
+└── api/          # API tests
+sources/
+├── web/          # Web page objects
+├── mobile/       # Mobile page objects
+└── api/          # API clients
+utils/            # Shared utilities and fixtures
+```
 
-### Structure & Organization
-- Create clear separation between page objects, tests, and utilities
-- Use async/await for all Playwright operations
-- Organize tests by platform and feature
+### Code Requirements
+- **Async Operations**: Use async/await for all Playwright interactions
+- **Modern Locators**: Prioritize `get_by_role()`, `get_by_text()`, `get_by_label()`
+- **Type Hints**: Include comprehensive type annotations
+- **Documentation**: Document complex logic, not simple actions
+- **Error Handling**: Implement robust error handling and logging
 
-### Playwright Best Practices
-- Use modern locators: `page.get_by_role()`, `page.get_by_text()`, `page.get_by_label()`
-- Implement auto-waiting strategies
-- Use fixtures for setup/teardown
-- Configure for multiple browsers and devices
+### Test Implementation
 
-### Page Object Model
-- Create a reusable and clean page object structure
-- Implement platform-specific page classes
-- Use composition over inheritance where appropriate
-- Encapsulate element interactions
+#### File Organization
+- **Naming**: `test_<feature>.py` convention
+- **Location**: Platform-specific directories (`tests/web/`, `tests/api/`, etc.)
+- **Scope**: One test file per major feature or page
 
-### Testing Patterns
-- Use pytest fixtures for test data and configuration
-- Implement data-driven testing approaches
-- Create reusable test utilities
-- Follow AAA pattern (Arrange, Act, Assert)
+#### Required Imports
+```python
+from playwright.async_api import Page, expect
+```
 
-### CI/CD Integration
-- Generate GitHub Actions workflows
-- Configure matrix testing for different platforms
-- Set up Allure report generation and GitHub Pages deployment
-- Include proper artifact handling
+#### Test Structure
+- **Setup**: Use `page.goto()` at test start; shared setup via pytest fixtures
+- **Pattern**: Follow AAA (Arrange, Act, Assert) pattern
+- **Focus**: One test per feature/user story for better maintainability
 
-### Performance & Mobile
-- Suggest performance testing tools integration
-- Provide mobile automation setup guidance
-- Configure device farms and emulators
-- Implement responsive testing strategies
+#### Locators & Interactions
+- **Priority Order**: `get_by_role()` > `get_by_label()` > `get_by_text()` > CSS selectors
+- **Auto-waiting**: Rely on Playwright's built-in waiting mechanisms
+- **Timeouts**: Avoid hard-coded waits; use default timeouts
 
-When generating code, prioritize:
-1. Type hints and documentation
-2. Error handling and logging
-3. Configuration management
-4. Test data management
-5. Parallel execution capabilities
+#### Assertions
+- **Test Script Location**: Keep all assertions in test scripts, NOT in page objects
+- **Separation of Concerns**: Page objects should return elements/data; tests should verify behavior
+- **Web-first**: Use `expect(page).to_have_title()`, `expect(locator).to_have_text()`
+- **Counts**: `expect(locator).to_have_count()` for element quantities
+- **Text Matching**: `to_have_text()` (exact) vs `to_contain_text()` (partial)
+- **Navigation**: `expect(page).to_have_url()` for URL verification
+- **Avoid**: `expect(locator).to_be_visible()` unless testing visibility changes
 
-## Test Generation Standards
+#### Page Object Model
+- **Encapsulation**: Wrap element interactions in methods that return data/elements
+- **No Assertions**: Page objects should NOT contain assertions or test logic
+- **Return Values**: Methods should return elements, text, or boolean states for test verification
+- **Platform-specific**: Separate classes for web/mobile implementations
+- **Composition**: Prefer composition over inheritance
+- **Reusability**: Create shared base classes for common functionality
 
-### Code Quality Standards
-- **Locators**: Prioritize user-facing, role-based locators (get_by_role, get_by_label, get_by_text) for resilience and accessibility.
-- **Assertions**: Use auto-retrying web-first assertions via the expect API (e.g., expect(page).to_have_title(...)). Avoid expect(locator).to_be_visible() unless specifically testing for a change in an element's visibility, as more specific assertions are generally more reliable.
-- **Timeouts**: Rely on Playwright's built-in auto-waiting mechanisms. Avoid hard-coded waits or increased default timeouts.
-- **Clarity**: Use descriptive test titles (e.g., def test_navigation_link_works():) that clearly state their intent. Add comments only to explain complex logic, not to describe simple actions like "click a button."
-- **Modularity**: Break down large tests into smaller, focused tests. Each test should ideally cover a single feature or user story.
-- **Maintainability**: Write tests that are easy to understand and maintain. Use helper functions and fixtures to reduce code duplication.
-- **Verification**: Run the test for current changes and ensure all changes are work properly.
+#### Test-Page Object Interaction Pattern
+```python
+# ✅ Correct: Assertion in test script
+def test_login_success(page: Page):
+    login_page = LoginPage(page)
+    login_page.fill_credentials("user", "pass")
+    login_page.click_login()
+    
+    # Assertions belong in test
+    expect(page).to_have_url("/dashboard")
+    expect(login_page.get_welcome_message()).to_contain_text("Welcome")
 
-### Test Structure & Organization
-- **Imports**: Every test file should begin with from playwright.async_api import Page, expect for async implementation
-- **Fixtures**: Use the page: Page fixture as an argument in your test functions to interact with the browser page that centralized under the utils directory
-- **Setup**: Place navigation steps like page.goto() at the beginning of each test function. For setup actions shared across multiple tests, use standard Pytest fixtures
-- **Location**: Store test files in a dedicated tests/ directory organized by platform (web/, mobile/, api/)
-- **Naming**: Test files must follow the test_<feature-or-page>.py naming convention
-- **Scope**: Aim for one test file per major application feature or page
+# ❌ Incorrect: Assertion in page object
+class LoginPage:
+    def verify_login_success(self):
+        expect(self.page).to_have_url("/dashboard")  # Don't do this
+```
 
-### Assertion Best Practices
-- **Element Counts**: Use expect(locator).to_have_count() to assert the number of elements found by a locator
-- **Text Content**: Use expect(locator).to_have_text() for exact text matches and expect(locator).to_contain_text() for partial matches
-- **Navigation**: Use expect(page).to_have_url() to verify the page URL
-- **Assertion Style**: Prefer `expect` over `assert` for more reliable UI tests
-
-### Test Execution Strategy
-1. **Execution**: Tests are run from the terminal using the pytest command
-2. **Debug Failures**: Analyze test failures and identify root causes
-3. **Parallel Execution**: Configure pytest-xdist for concurrent test runs
-4. **Cross-Platform**: Matrix testing for different browsers and devices
+### Execution & CI/CD
+- **Local**: Run tests via `pytest` command
+- **Parallel**: Configure `pytest-xdist` for concurrent execution
+- **Matrix Testing**: Support multiple browsers, devices, and platforms
+- **Reporting**: Generate Allure reports with artifact handling
+- **Deployment**: Auto-deploy reports to GitHub Pages
