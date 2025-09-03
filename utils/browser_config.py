@@ -107,7 +107,16 @@ class Config:
             if session_state:
                 context_options["storage_state"] = session_state
 
-        return await self.browser.new_context(**context_options)
+
+        for attempt in range(3):
+            try:
+                return await self.browser.new_context(**context_options)
+            except Exception as e:
+                if attempt == 2:  # Last attempt
+                    raise e
+                await asyncio.sleep(
+                    0.05 * (attempt + 1)
+                )  # Small delay for race conditions
 
     async def setup_page(self, device_name: Optional[str] = None) -> Page:
         """Set up a new page with optional device emulation."""
