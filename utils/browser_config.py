@@ -85,12 +85,12 @@ class Config:
                     }
                 )
         elif platform == "mobile":
-            # Use mobile viewport when platform is mobile but no specific device
-            context_options.update({
-                "viewport": {"width": 375, "height": 812},
-                "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1"
-            })
-            logging.info("Using mobile viewport configuration")
+            context_options.update(
+                {
+                    "is_mobile": True,
+                    "has_touch": True,
+                }
+            )
         else:
             # Desktop defaults when platform is desktop
             context_options.update(
