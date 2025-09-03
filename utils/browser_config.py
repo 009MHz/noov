@@ -8,12 +8,13 @@ from utils.sess_handler import SessionHandler
 
 # Constants
 DEFAULT_BROWSER = "chromium"
+DEFAULT_DEVICES = "Pixel 9"
 RETRY_ATTEMPTS = 3
 RETRY_DELAY = 0.1
 SUPPORTED_MODES = ("pipeline", "local")
 
 
-class Config:
+class Config:   
     def __init__(self):
         """Initialize browser configuration."""
         self.browser = None
@@ -55,7 +56,6 @@ class Config:
             playwright[browser_type].launch, **launch_args
         )
         self.session_handler = SessionHandler(self.browser, self.is_headless())
-        logging.info("Browser setup completed")
 
     def _get_device_config(
         self, platform: str, device_name: Optional[str] = None
@@ -75,12 +75,19 @@ class Config:
         }
 
     def _get_mobile_config(self) -> Dict[str, Any]:
-        """Get mobile configuration."""
         if self._playwright:
-            for device_config in self._playwright.devices.values():
-                if device_config.get("is_mobile", False):
-                    return device_config
-        return {"is_mobile": True, "has_touch": True}
+            default_device = self._playwright.devices.get(DEFAULT_DEVICES)  # Param to receive selected device
+            if default_device:
+                return default_device
+
+        # Fallback mobile config if Pixel 9 not available
+        return {
+            "viewport": {"width": 414, "height": 915},
+            "screen": {"width": 414, "height": 915},
+            "is_mobile": True, 
+            "has_touch": True,
+            "device_scale_factor": 2,
+        }
 
     async def context_init(
         self,
