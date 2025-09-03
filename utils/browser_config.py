@@ -24,7 +24,7 @@ class Config:
         return os.getenv("headless") == "True"
 
     async def setup_browser(self, playwright: Playwright):
-        """Initialize browser with playwright instance."""
+        """Initialize browser with playwright instance with retry for race conditions."""
         self._playwright = playwright
         browser_type = os.getenv("BROWSER", "chromium")
         mode = os.getenv("mode", "local")  # Execution mode: local, grid, pipeline
@@ -33,7 +33,15 @@ class Config:
         launch_args = {"headless": headless, "args": ["--start-maximized"]}
 
         if mode in ("pipeline", "local"):
-            self.browser = await playwright[browser_type].launch(**launch_args)
+            # Add retry mechanism for race conditions in parallel execution
+            for attempt in range(3):
+                try:
+                    self.browser = await playwright[browser_type].launch(**launch_args)
+                    break
+                except Exception as e:
+                    if attempt == 2:  # Last attempt
+                        raise e
+                    await asyncio.sleep(0.1 * (attempt + 1))  # Exponential backoff
         else:
             raise ValueError(f"Unsupported execution type: {mode}")
 
