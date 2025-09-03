@@ -1,7 +1,9 @@
 import os
 import logging
+import pytest
 from typing import Optional, Dict, Any
 from utils.sess_handler import SessionHandler
+import asyncio
 
 
 # Type hints from playwright are used through type annotations
