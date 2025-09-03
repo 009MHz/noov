@@ -39,10 +39,10 @@ class TestHomeSmoke:
     @allure.title("Homepage Mobile Banner validation")
     @allure.feature("Home/ Mobile Banner")
     @allure.severity(severity.CRITICAL)
-    @pytest.mark.parametrize("market", ["iOS", "Android"])
+    @pytest.mark.parametrize("market", ["Apple", "Google"])
     async def test_mobile_app_redirection(self, page, home, market, platform):
         allure.step(f"Click on the {market} button")
-        if market == "iOS":
+        if market == "Apple":
             await home.click_banner_apple_btn()
             await expect(page).to_have_url(re.compile(r"https://apps.apple.com/id/app/ucollect-by-noovoleum/.*"))
         else:
