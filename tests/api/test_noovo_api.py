@@ -5,7 +5,7 @@ from sources.api.__base import BaseService
 from sources.api.clients.noovo_home_client import HomeClient
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 async def noovo_api(api_request: APIRequestContext):
     api_client = BaseService(api_request)
     return HomeClient(api_client)
