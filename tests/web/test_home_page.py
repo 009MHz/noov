@@ -5,8 +5,6 @@ from playwright.async_api import expect
 from sources.web.home_page import HomePage
 from allure import severity_level as severity
 from utils.allure_helpers import step
-from utils.allure_helpers import step
-from utils.allure_helpers import step
 
 
 @pytest.fixture(scope='function')
