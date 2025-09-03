@@ -28,7 +28,6 @@ class Config:
         self._playwright = playwright
         browser_type = os.getenv("BROWSER", "chromium")
         mode = os.getenv("mode", "local")  # Execution mode: local, grid, pipeline
-        platform = os.getenv("platform", "desktop")  # Platform: desktop, mobile
         headless = self.is_headless()
         launch_args = {"headless": headless, "args": ["--start-maximized"]}
 
