@@ -103,7 +103,7 @@ pytest tests/api
 pytest tests/api -n=auto
 
 # Specific API test categories
-pytest tests/api/test_boxes.py tests/api/test_boxes_negative.py
+pytest tests/api/test_noovo.py tests/api/test_noovo_negative.py
 ```
 
 #### Mobile Application tests
@@ -194,10 +194,10 @@ tests/
     ios/               # iOS app tests  
       test_login_ios.py
   api/                 # API tests
-    test_boxes.py           # API functionality tests
-    test_boxes_negative.py  # API error handling tests
-    test_boxes_contract.py  # API contract validation
-    test_boxes_scheme_param.py # API schema validation
+    test_noovo.py           # API functionality tests
+    test_noovo_negative.py  # API error handling tests
+    test_noovo_contract.py  # API contract validation
+    test_noovo_scheme_param.py # API schema validation
   performance/         # Performance testing
     locustfile.py      # Locust performance scenarios
   test_suites.md       # Manual test case documentation
