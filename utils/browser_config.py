@@ -1,56 +1,112 @@
 import os
 import logging
+from typing import Optional, Dict, Any
 from utils.sess_handler import SessionHandler
+
+
+# Type hints from playwright are used through type annotations
+Playwright = Any  # type: ignore
+Browser = Any  # type: ignore
+BrowserContext = Any  # type: ignore
+Page = Any  # type: ignore
 
 
 class Config:
     def __init__(self):
-        self.browser = None
-        self.page = None
-        self.session_handler = None
+        self.browser: Optional[Browser] = None
+        self.page: Optional[Page] = None
+        self.session_handler: Optional[SessionHandler] = None
+        self._playwright: Optional[Playwright] = None
 
-    def is_headless(self):
+    def is_headless(self) -> bool:
         return os.getenv("headless") == "True"
 
-    async def setup_browser(self, playwright):
+    async def setup_browser(self, playwright: Playwright):
+        """Initialize browser with playwright instance."""
+        self._playwright = playwright
         browser_type = os.getenv("BROWSER", "chromium")
-        mode = os.getenv("mode")
+        mode = os.getenv("mode", "local")  # Execution mode: local, grid, pipeline
+        platform = os.getenv("platform", "desktop")  # Platform: desktop, mobile
         headless = self.is_headless()
-        launch_args = {
-            "headless": headless,
-            "args": ["--start-maximized"]}
+        launch_args = {"headless": headless, "args": ["--start-maximized"]}
 
-        if mode in ('pipeline', 'local'):
+        if mode in ("pipeline", "local"):
             self.browser = await playwright[browser_type].launch(**launch_args)
-        elif mode == 'grid':
-            server_url = "http://remote-playwright-server:4444"
-            self.browser = await playwright[browser_type].connect(server_url)
         else:
             raise ValueError(f"Unsupported execution type: {mode}")
 
         self.session_handler = SessionHandler(self.browser, headless)
 
-    async def context_init(self, storage_state=None, user_type="user"):
-        context_options = {
-            "viewport": {"width": 1920, "height": 1080} if self.is_headless() else None,
-            "no_viewport": not self.is_headless()}
+    async def context_init(
+        self,
+        storage_state: Optional[str] = None,
+        user_type: str = "user",
+        device_name: Optional[str] = None,
+    ) -> BrowserContext:
+        """Initialize browser context with optional device emulation."""
+        if not self.browser or not self._playwright:
+            raise RuntimeError("Browser not initialized. Call setup_browser first.")
 
-        if storage_state:
-            context_options["storage_state"] = await self.session_handler.create_session(user_type)
+        context_options: Dict[str, Any] = {}
+        platform = os.getenv("platform", "desktop")
+
+        if device_name:
+            # Get device configuration from Playwright's predefined devices
+            device = self._playwright.devices.get(device_name)
+            if device:
+                context_options.update(device)
+                logging.info(f"Using device configuration for: {device_name}")
+            else:
+                logging.warning(
+                    f"Device '{device_name}' not found, using default settings"
+                )
+        elif platform == "mobile":
+            # Use mobile viewport when platform is mobile but no specific device
+            context_options.update({
+                "viewport": {"width": 375, "height": 812},
+                "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1"
+            })
+            logging.info("Using mobile viewport configuration")
+        else:
+            # Desktop defaults when platform is desktop
+            context_options.update(
+                {
+                    "viewport": (
+                        {"width": 1920, "height": 1080} if self.is_headless() else None
+                    ),
+                    "no_viewport": not self.is_headless(),
+                }
+            )
+
+        if storage_state and self.session_handler:
+            session_state = await self.session_handler.create_session(user_type)
+            if session_state:
+                context_options["storage_state"] = session_state
 
         return await self.browser.new_context(**context_options)
 
-    async def setup_page(self):
-        context = await self.context_init()
+    async def setup_page(self, device_name: Optional[str] = None) -> Page:
+        """Set up a new page with optional device emulation."""
+        context = await self.context_init(device_name=device_name)
         self.page = await context.new_page()
         return self.page
 
-    async def setup_auth_page(self, auth_mode: str):
-        context = await self.context_init(storage_state=True, user_type=auth_mode)
+    async def setup_auth_page(
+        self, auth_mode: str, device_name: Optional[str] = None
+    ) -> Page:
+        """Set up a new authenticated page with optional device emulation."""
+        if not self.session_handler:
+            raise RuntimeError("Session handler not initialized")
+
+        session_state = await self.session_handler.create_session(auth_mode)
+        context = await self.context_init(
+            storage_state=session_state, user_type=auth_mode, device_name=device_name
+        )
         self.page = await context.new_page()
         return self.page
 
     async def capture_handler(self):
+        """Handle screenshot capture based on environment settings."""
         screenshot_option = os.getenv("screenshot", "off")
         if screenshot_option != "off" and self.page:
             screenshot_path = f"reports/screenshots/{await self.page.title()}.png"
@@ -58,5 +114,6 @@ class Config:
             await self.page.screenshot(path=screenshot_path, full_page=True)
 
 
-logging.getLogger('asyncio').setLevel(logging.WARNING)
-logging.getLogger('filelock').setLevel(logging.CRITICAL)
+# Configure logging
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("filelock").setLevel(logging.CRITICAL)
