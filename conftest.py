@@ -2,60 +2,74 @@ import pytest
 import os
 import asyncio
 import allure
-from utils.browser_config import Config
 from playwright.async_api import async_playwright
-from dotenv import load_dotenv
-
-runner = Config()
+from utils.browser_config import Config, ContextManager
+from utils.pytest_config import (
+    pytest_generate_tests_handler as generate_tests_handler,
+    configure_environment,
+    add_pytest_options
+)
 
 
 def pytest_addoption(parser):
-    parser.addoption('--env', action='store', default='test', help='Specify the test environment')
-    parser.addoption('--mode', help='Specify the execution mode: local, grid, pipeline', default='local')
-    parser.addoption('--headless', action='store_true', default=False, help='Run tests in headless mode')
+    """Add custom pytest command line options."""
+    add_pytest_options(parser)
 
 
 def pytest_configure(config):
-    # Load environment variables from .env file first
-    load_dotenv(override=True)  # Force override existing env vars
-    
-    # Override with command line options
-    os.environ["env"] = config.getoption('env')
-    os.environ["mode"] = config.getoption('mode') or 'local'
-    os.environ["headless"] = str(config.getoption('headless'))
+    """Configure environment from CLI options."""
+    configure_environment(config)
 
 
-@pytest.fixture
+def pytest_generate_tests(metafunc):
+    """Generate tests with platform parameters based on CLI options."""
+    generate_tests_handler(metafunc)
+
+
+@pytest.fixture(scope="function")
 async def playwright():
+    """Function-scoped playwright instance for worker safety."""
     async with async_playwright() as playwright:
         yield playwright
 
 
-@pytest.fixture
-async def browser(playwright):
-    await runner.setup_browser(playwright)
+@pytest.fixture(scope="function")
+async def runner(playwright):
+    """Function-scoped runner instance for parallel execution safety."""
+    runner_instance = Config()
+    await runner_instance.setup_browser(playwright)
+    yield runner_instance
+    if runner_instance.browser:
+        await runner_instance.browser.close()
+
+
+@pytest.fixture(scope="function")
+async def browser(runner):
+    """Function-scoped browser for parallel execution safety."""
     yield runner.browser
-    if runner.browser:
-        await runner.browser.close()
 
 
 @pytest.fixture()
-async def context(browser):
-    context = await runner.context_init()
+async def context(runner, request):
+    """Create browser context with optional device emulation."""
+    context_manager = ContextManager(runner)
+    
+    context, _ = await context_manager.create_context(request)
     yield context
-    await context.close()
+    await context_manager.cleanup_context(context)
 
 
 @pytest.fixture()
-async def page(context):
-    page = await context.new_page()
+async def page(context, runner):
+    """Create new page in the current context."""
+    context_manager = ContextManager(runner)
+    page = await context_manager.create_page(context)
     yield page
-    await runner.capture_handler()
-    await page.close()
+    await context_manager.cleanup_page(page)
 
 
 @pytest.fixture()
-async def user_auth(browser):
+async def user_auth(runner):
     page_instance = await runner.setup_auth_page("user")
     yield page_instance
     await runner.capture_handler()
@@ -63,7 +77,7 @@ async def user_auth(browser):
 
 
 @pytest.fixture()
-async def admin_auth(browser):
+async def admin_auth(runner):
     page_instance = await runner.setup_auth_page("admin")
     yield page_instance
     await runner.capture_handler()
@@ -71,7 +85,7 @@ async def admin_auth(browser):
 
 
 @pytest.fixture()
-async def super_auth(browser):
+async def super_auth(runner):
     page_instance = await runner.setup_auth_page("super_admin")
     yield page_instance
     await runner.capture_handler()

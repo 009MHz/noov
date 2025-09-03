@@ -61,8 +61,8 @@ jobs:
           pytest tests/web \
             --browser ${{ matrix.browser }} \
             --base-url=${{ inputs.base_url }} \
-            -n=auto --reruns 2 --reruns-delay 2 \
-            --alluredir=allure-results --headless
+            -n=auto --reruns 1 --reruns-delay 2 \
+            --alluredir=allure-results --headless --platform=all
 
       - name: Upload Allure (UI-${{ matrix.browser }})
         if: always()

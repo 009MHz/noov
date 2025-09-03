@@ -28,7 +28,7 @@ class TestContactForm:
             ("invalid_message", "QA Test", "qa@test.com", ""),
         ]
     )
-    async def test_contact_form_error_validation(self, home, scenario, name, email, message):
+    async def test_contact_form_error_validation(self, home, scenario, name, email, message, platform):
         allure.step(f"Submit form with {scenario} scenario")
         if scenario == "empty":
             await home.click_send_message()
@@ -50,7 +50,7 @@ class TestContactForm:
 
     @allure.title("Contact Form - Successful Submission")
     @allure.severity(severity.CRITICAL)
-    async def test_contact_form_submit_happy_path(self, home):
+    async def test_contact_form_submit_happy_path(self, home, platform):
         allure.step("Fill form with valid data")
         await home.fill_contact_form(
             name="QA Test",

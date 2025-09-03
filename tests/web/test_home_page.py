@@ -20,7 +20,7 @@ class TestHomepage:
     @allure.title("Homepage Header validation")
     @allure.feature("Home/ Heading")
     @allure.severity(severity.NORMAL)
-    async def test_homepage_logo_and_heading(self, home):
+    async def test_homepage_logo_and_heading(self, home, platform):
         allure.step("Verify key header UI")
         await expect(home.logo).to_be_visible()
         await expect(home.hero_text).to_be_visible()
@@ -33,7 +33,7 @@ class TestHomepage:
     @allure.title("Homepage Mobile Banner validation")
     @allure.feature("Home/ Mobile Banner")
     @allure.severity(severity.NORMAL)
-    async def test_homepage_mobile_banner(self, home):
+    async def test_homepage_mobile_banner(self, home, platform):
         allure.step("Verify mobile app banner")
         await expect(home.banner_mobile).to_be_visible()
         await expect(home.apple_btn).to_have_attribute("href", re.compile(r"noovoleum\.onelink\.me"))
@@ -42,7 +42,7 @@ class TestHomepage:
     @allure.title("Homepage Banner Steps validation")
     @allure.feature("Home/ Process Banner")
     @allure.severity(severity.CRITICAL)
-    async def test_homepage_process_steps(self, home):
+    async def test_homepage_process_steps(self, home, platform):
         allure.step("Verify the steps banner")
 
         steps = [
@@ -61,7 +61,7 @@ class TestHomepage:
     @allure.title("Homepage Contact Banner validation")
     @allure.feature("Home/ Contact Banner")
     @allure.severity(severity.CRITICAL)
-    async def test_homepage_contact_section(self, home): 
+    async def test_homepage_contact_section(self, home, platform): 
         allure.step("Verify submit form elements")
         await expect(home.header_submit).to_be_visible()
         await expect(home.input_name).to_be_visible()
@@ -80,7 +80,7 @@ class TestHomepage:
     @allure.title("Homepage Footer validation")
     @allure.feature("Home/ Footer")
     @allure.severity(severity.MINOR)
-    async def test_homepage_footer_section(self, home): 
+    async def test_homepage_footer_section(self, home, platform): 
         allure.step("Verify footer elements")
         await expect(home.footer).to_be_visible()
         await expect(home.copyright_text).to_be_visible()

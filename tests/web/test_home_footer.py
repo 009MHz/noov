@@ -25,7 +25,7 @@ class TestFooter:
             ("Terms and Conditions", "/terms-and-conditions-2024"),
         ]
     )
-    async def test_footer_link_navigation(self, home, context, link_type, path):
+    async def test_footer_link_navigation(self, home, platform, context, link_type, path):
         allure.step(f"Click {link_type} link and wait for new tab")
         async with context.expect_page() as new_page_info:
             if link_type == "Self Declaration":
