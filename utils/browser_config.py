@@ -65,10 +65,24 @@ class Config:
             device = self._playwright.devices.get(device_name)
             if device:
                 context_options.update(device)
-                logging.info(f"Using device configuration for: {device_name}")
             else:
+                available_devices = list(self._playwright.devices.keys())
+                mobile_devices = [
+                    d
+                    for d in available_devices
+                    if "iPhone" in d or "Pixel" in d or "Galaxy" in d
+                ][:5]
                 logging.warning(
-                    f"Device '{device_name}' not found, using default settings"
+                    f"Device '{device_name}' not found. Available mobile devices: {mobile_devices}"
+                )
+
+                # Fallback to default mobile configuration
+                context_options.update(
+                    {
+                        "viewport": {"width": 375, "height": 812},
+                        "is_mobile": True,
+                        "has_touch": True,
+                    }
                 )
         elif platform == "mobile":
             # Use mobile viewport when platform is mobile but no specific device
