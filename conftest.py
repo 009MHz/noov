@@ -1,115 +1,75 @@
 import pytest
 import os
 import asyncio
-import logging
 import allure
-from utils.browser_config import Config
 from playwright.async_api import async_playwright
-from dotenv import load_dotenv
-
-runner = Config()
+from utils.browser_config import Config, ContextManager
+from utils.pytest_config import (
+    pytest_generate_tests_handler as generate_tests_handler,
+    configure_environment,
+    add_pytest_options
+)
 
 
 def pytest_addoption(parser):
-    parser.addoption('--env', action='store', default='test', help='Specify the test environment')
-    parser.addoption('--mode', help='Specify the execution mode: local, grid, pipeline', default='local')
-    parser.addoption('--platform', help='Specify the platform: desktop, mobile, or both (default)', default=None)
-    parser.addoption('--headless', action='store_true', default=False, help='Run tests in headless mode')
+    """Add custom pytest command line options."""
+    add_pytest_options(parser)
 
 
 def pytest_configure(config):
-    # Load environment variables from .env file first
-    load_dotenv(override=True)  # Force override existing env vars
-    
-    # Override with command line options
-    os.environ["env"] = config.getoption('env')
-    os.environ["mode"] = config.getoption('mode') or 'local'
-    os.environ["headless"] = str(config.getoption('headless'))
-    
-    # Store the platform option for global access
-    platform_option = config.getoption('platform')
-    config._platform_option = platform_option
+    """Configure environment from CLI options."""
+    configure_environment(config)
 
 
 def pytest_generate_tests(metafunc):
     """Generate tests with platform parameters based on CLI options."""
-    # Check if the test function has a platform parameter
-    if "platform" in metafunc.fixturenames:
-        platform_option = metafunc.config.getoption('platform')
-        
-        if platform_option == 'mobile':
-            # Run only mobile tests
-            platforms = ['mobile']
-        elif platform_option == 'desktop':
-            # Run only desktop tests
-            platforms = ['desktop']
-        else:
-            # Run both desktop and mobile tests (default behavior)
-            platforms = ['desktop', 'mobile']
-        
-        metafunc.parametrize("platform", platforms, scope="function")
+    generate_tests_handler(metafunc)
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def playwright():
+    """Function-scoped playwright instance for worker safety."""
     async with async_playwright() as playwright:
         yield playwright
 
 
-@pytest.fixture
-async def browser(playwright):
-    await runner.setup_browser(playwright)
+@pytest.fixture(scope="function") 
+async def runner(playwright):
+    """Function-scoped runner instance for parallel execution safety."""
+    runner_instance = Config()
+    await runner_instance.setup_browser(playwright)
+    yield runner_instance
+    if runner_instance.browser:
+        await runner_instance.browser.close()
+
+
+@pytest.fixture(scope="function")
+async def browser(runner):
+    """Function-scoped browser for parallel execution safety."""
     yield runner.browser
-    if runner.browser:
-        await runner.browser.close()
 
 
 @pytest.fixture()
-async def context(request):
+async def context(runner, request):
     """Create browser context with optional device emulation."""
-    device_name = None
+    context_manager = ContextManager(runner)
     
-    # Get platform from parametrize or environment
-    platform = getattr(request, 'param', None) if hasattr(request, 'param') else None
-    if not platform:
-        try:
-            platform = request.getfixturevalue('platform')
-        except pytest.FixtureLookupError:
-            platform = 'desktop'  # default
-    
-    # Set platform in environment for browser config
-    os.environ["platform"] = platform
-    
-    # Check for mobile marker and device parameter
-    if request.node.get_closest_marker("mobile"):
-        try:
-            # Try to get device name from parametrize
-            device_name = request.getfixturevalue("device_name")
-        except pytest.FixtureLookupError:
-            # Use default device if not specified
-            device_name = "Pixel 7"
-            
-        logging.info(f"Setting up mobile context with device: {device_name}")
-    elif platform == "mobile":
-        logging.info("Setting up mobile context with custom viewport")
-    
-    # Initialize context with device if specified
-    context = await runner.context_init(device_name=device_name)
+    context, _ = await context_manager.create_context(request)
     yield context
-    await context.close()
+    await context_manager.cleanup_context(context)
 
 
 @pytest.fixture()
-async def page(context):
+async def page(context, runner):
     """Create new page in the current context."""
-    page = await context.new_page()
+    context_manager = ContextManager(runner)
+    page = await context_manager.create_page(context)
     yield page
-    await runner.capture_handler()  # Capture screenshot if configured
-    await page.close()
+    await context_manager.cleanup_page(page)
 
 
 @pytest.fixture()
-async def user_auth(browser):
+async def user_auth(runner):
     page_instance = await runner.setup_auth_page("user")
     yield page_instance
     await runner.capture_handler()
@@ -117,7 +77,7 @@ async def user_auth(browser):
 
 
 @pytest.fixture()
-async def admin_auth(browser):
+async def admin_auth(runner):
     page_instance = await runner.setup_auth_page("admin")
     yield page_instance
     await runner.capture_handler()
@@ -125,7 +85,7 @@ async def admin_auth(browser):
 
 
 @pytest.fixture()
-async def super_auth(browser):
+async def super_auth(runner):
     page_instance = await runner.setup_auth_page("super_admin")
     yield page_instance
     await runner.capture_handler()
