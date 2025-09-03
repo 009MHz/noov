@@ -146,6 +146,64 @@ class Config:
             os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
             await self.page.screenshot(path=screenshot_path, full_page=True)
 
+class ContextManager:
+    """Handles browser context creation and management."""
+
+    def __init__(self, runner: Config):
+        self.runner = runner
+
+    async def create_context(self, request):
+        """Create browser context with optional device emulation."""
+        device_name = None
+
+        # Get platform from parametrize or environment
+        platform = (
+            getattr(request, "param", None) if hasattr(request, "param") else None
+        )
+        if not platform:
+            try:
+                platform = request.getfixturevalue("platform")
+            except pytest.FixtureLookupError:
+                platform = "desktop"  # default
+
+        # Set platform in environment for browser config
+        os.environ["platform"] = platform
+
+        # Check for mobile marker and device parameter
+        if request.node.get_closest_marker("mobile"):
+            try:
+                # Try to get device name from parametrize
+                device_name = request.getfixturevalue("device_name")
+            except pytest.FixtureLookupError:
+                # Use modern default devices if not specified
+                device_name = "Pixel 7"  # Modern Android device
+
+            logging.info(f"Setting up mobile context with device: {device_name}")
+        elif platform == "mobile":
+            # Set default mobile device for mobile platform
+            device_name = "iPhone XR"
+            logging.info(
+                f"Setting up mobile context with default device: {device_name}"
+            )
+
+        # Initialize context with device if specified
+        context = await self.runner.context_init(device_name=device_name)
+        return context, platform
+
+    async def create_page(self, context):
+        """Create new page in the current context."""
+        page = await context.new_page()
+        return page
+
+    async def cleanup_page(self, page):
+        """Clean up page resources."""
+        await self.runner.capture_handler()  # Capture screenshot if configured
+        await page.close()
+
+    async def cleanup_context(self, context):
+        """Clean up context resources."""
+        await context.close()
+
 
 # Configure logging
 logging.getLogger("asyncio").setLevel(logging.WARNING)
