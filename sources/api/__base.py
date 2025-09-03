@@ -6,7 +6,7 @@ from allure_commons.types import AttachmentType
 from utils.api_config import api_config
 
 
-class BaseAPIClient:
+class BaseService:
     def __init__(self, request_context: APIRequestContext):
         """Initialize the API client with a Playwright request context."""
         self.request = request_context
