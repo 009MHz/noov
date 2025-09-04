@@ -4,6 +4,7 @@ import re
 from playwright.async_api import expect
 from sources.web.home_page import HomePage
 from allure import severity_level as severity
+from utils.allure_helpers import step
 
 
 @pytest.fixture(scope="function")
@@ -21,30 +22,39 @@ class TestHomeSmoke:
     @allure.feature("Home/ Heading")
     @allure.severity(severity.NORMAL)
     async def test_language_toggle(self, page, home, platform):
-        allure.step("Click on the language toggle and verify URL change to Indonesian")
-        await expect(home.language_toggle).to_contain_text("Indonesian")
-        await home.click_language_toggle()
-        await expect(page).to_have_url(re.compile(r".*/id"))
-        await expect(home.language_toggle).to_contain_text("English")
+        with step("Click on the language toggle and verify URL change to Indonesian"):
+            await expect(home.language_toggle).to_contain_text("Indonesian")
+            await home.click_language_toggle()
+            await expect(page).to_have_url(re.compile(r".*/id"))
+            await expect(home.language_toggle).to_contain_text("English")
 
-        allure.step("Click again the language toggle and verify URL change to English")
-        await home.click_language_toggle()
-        await expect(page).not_to_have_url(re.compile(r".*/id"))
-        await expect(home.language_toggle).to_contain_text("Indonesian")
+        with step("Click again the language toggle and verify URL change to English"):
+            await home.click_language_toggle()
+            await expect(page).not_to_have_url(re.compile(r".*/id"))
+            await expect(home.language_toggle).to_contain_text("Indonesian")
 
-        allure.step("Click the main Logo icon")
-        await home.click_main_logo()
-        await expect(page).to_have_url(re.compile(r".*#home"))
+        with step("Click the main Logo icon"):
+            await home.click_main_logo()
+            await expect(page).to_have_url(re.compile(r".*#home"))
 
     @allure.title("Homepage Mobile Banner validation")
     @allure.feature("Home/ Mobile Banner")
     @allure.severity(severity.CRITICAL)
     @pytest.mark.parametrize("market", ["Apple", "Google"])
     async def test_mobile_app_redirection(self, page, home, market, platform):
-        allure.step(f"Click on the {market} button")
         if market == "Apple":
-            await home.click_banner_apple_btn()
-            await expect(page).to_have_url(re.compile(r"https://apps.apple.com/id/app/ucollect-by-noovoleum/.*"))
+            with step(f"Click on the {market} button"):
+                await home.click_banner_apple_btn()
+            with step(f"Verify the {market} redirection"):
+                await expect(page).to_have_url(
+                    re.compile(
+                        r"https://apps.apple.com/id/app/ucollect-by-noovoleum/.*"
+                    )
+                )
         else:
-            await home.click_banner_android_btn()
-            await expect(page).to_have_url("https://play.google.com/store/apps/details?id=com.noovoleum.ucollect")
+            with step(f"Click on the {market} button"):
+                await home.click_banner_android_btn()
+            with step(f"Verify the {market} redirection"):
+                await expect(page).to_have_url(
+                    "https://play.google.com/store/apps/details?id=com.noovoleum.ucollect"
+                )
