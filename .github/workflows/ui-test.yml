@@ -4,8 +4,9 @@ on:
   workflow_call:
     inputs:
       base_url:
-        required: true
+        required: false
         type: string
+        default: ""
       browsers:
         required: false
         type: string
@@ -24,7 +25,7 @@ jobs:
         run: |
           RAW="${{ inputs.browsers }}"
           RAW_NO_SPACE="$(echo "$RAW" | tr -d '[:space:]')"
-          JSON_ARRAY="$(printf '%s' "$RAW_NO_SPACE" | awk -F, 'BEGIN{printf "["}{for(i=1;i<=NF;i++){gsub(/"/,"",$i); printf "%s\"%s\"", (i>1?",":""), $i} printf "]"}')"
+          JSON_ARRAY="$(printf '%s' "$RAW_NO_SPACE" | awk -F, 'BEGIN{printf "["}{for(i=1;i<=NF;i++){printf "%s\"%s\"", (i>1?",":""), $i} printf "]"}')"
           echo "browsers_json=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
 
   ui:
@@ -62,14 +63,12 @@ jobs:
             echo "ERROR: CREDENTIALS secret is empty or not passed from caller." >&2
             exit 1
           fi
-          # Write verbatim (handles multiline safely)
+          # Write verbatim and normalize CRLF
           printf '%s' "${{ secrets.CREDENTIALS }}" > .env
-          # Normalize CRLF (if secret was pasted from Windows)
           sed -i 's/\r$//' .env
-
-          # Verify without printing secrets
+          
+          # Basic verification
           test -f .env || (echo "ERROR: .env not created" >&2; exit 1)
-          echo ".env created with $(wc -l < .env) lines"
 
       - name: Setup auth session
         run: |
@@ -94,10 +93,4 @@ jobs:
       - name: Cleanup authentication session
         if: always()
         run: |
-          # Check if .auth directory exists before removing
-          if [ -d ".auth" ]; then
-            rm -rf .auth
-            echo "Authentication session files removed"
-          else
-            echo "No authentication session files found to clean up"
-          fi
+          [ -d ".auth" ] && rm -rf .auth
