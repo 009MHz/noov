@@ -49,12 +49,8 @@ jobs:
       - name: Install deps
         run: |
           pip install -U pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          else
-            pip install pytest pytest-playwright allure-pytest pytest-xdist pytest-rerunfailures
-          fi
-          python -m playwright install --with-deps
+          pip install -r requirements.txt
+          python -m playwright install --with-deps ${{ matrix.browser }}
 
       - name: Setup auth session
         run: |
