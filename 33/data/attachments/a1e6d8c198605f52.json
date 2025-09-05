@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "status_text": "OK",
+  "url": "https://api.noovoleum.com/open_api/boxes",
+  "headers": {
+    "date": "Fri, 05 Sep 2025 11:49:04 GMT",
+    "content-type": "application/json; charset=utf-8",
+    "content-length": "67335",
+    "connection": "keep-alive",
+    "x-powered-by": "Express",
+    "access-control-allow-origin": "*",
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept",
+    "etag": "W/\"10707-cq5RQee0etYaVB8AanL3rdpPOSI\""
+  },
+  "ok": true
+}
