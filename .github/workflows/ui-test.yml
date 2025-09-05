@@ -23,9 +23,7 @@ jobs:
     steps:
       - id: mk
         run: |
-          echo "browsers_json=$(echo \"$BROWSERS\" | tr ',' '\n' | grep -v '^$' | jq -R . | jq -s .)" >> $GITHUB_OUTPUT
-        env:
-          BROWSERS: ${{ inputs.browsers }}
+              echo "browsers_json=[$(echo "${{ inputs.browsers }}" | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/' )]" >> $GITHUB_OUTPUT
 
   ui:
     runs-on: ubuntu-latest
