@@ -1,7 +1,15 @@
-import asyncio
+#!/usr/bin/env python3
+import os
 import sys
+import asyncio
 import logging
 from playwright.async_api import async_playwright
+
+# Add project root to Python path to allow imports
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from utils.sess_handler import SessionHandler
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

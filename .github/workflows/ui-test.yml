@@ -58,8 +58,8 @@ jobs:
 
       - name: Setup auth session
         run: |
-          # Use the existing setup_session script
-          python utils/setup_session.py
+          cd $GITHUB_WORKSPACE
+          python -m utils.setup_session
           
       - name: Run UI tests (${{ matrix.browser }})
         run: |
