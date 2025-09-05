@@ -3,11 +3,13 @@ import os
 import sys
 import asyncio
 import logging
+from typing import List, Optional, Union
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 from pathlib import Path
+from utils.sess_handler import SessionHandler
 
-# Load environment variables from .env file
+
 dotenv_path = Path(__file__).parent.parent / '.env'
 if dotenv_path.exists():
     load_dotenv(dotenv_path)
@@ -15,16 +17,12 @@ if dotenv_path.exists():
 else:
     logging.warning(f".env file not found at {dotenv_path}")
 
-# Add project root to Python path to allow imports
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+project_root = str(Path(__file__).parent.parent.resolve())
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from utils.sess_handler import SessionHandler
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-async def setup_session(user_types=None):
+async def setup_session(user_types: Optional[Union[str, List[str]]] = None) -> None:
     if user_types is None:
         user_types = ["user", "admin"]
     elif isinstance(user_types, str):
