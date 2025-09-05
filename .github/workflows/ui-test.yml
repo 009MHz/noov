@@ -52,11 +52,27 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Create .env file from repository secret
+      - name: Create .env file directly in workflow
         run: |
-          # Load the entire .env file content from the DOTENV_E2E secret
-          echo "${{ secrets.DOTENV_E2E }}" > .env
-          echo "Created .env file from repository secret"
+          # Create the .env file with all required configuration
+          cat > .env << 'EOF'
+          API_URL="https://api.noovoleum.com"
+          PYTHONDONTWRITEBYTECODE=1
+          AUTH_MODE="admin"
+          USER_EMAIL="germa69.reiju@gmail.com"
+          USER_PASSWORD="Test123"
+          ADMIN_EMAIL="harits.satriyo@noovoleum.com"
+          ADMIN_PASSWORD="Halo123456"
+          USER_2FA_EMAIL=""
+          USER_2FA_PASSWORD=""
+          USER_2FA_CODE=""
+          INVALID_TEST_EMAIL="invalid@example.com"
+          INVALID_FORMAT_EMAIL="test@example"
+          INVALID_TFA_CODE="000000"
+          TEST_EMAIL="test@example.com"
+          EOF
+          
+          echo "Created .env file directly in workflow"
           
           # Verify the .env file was created (without showing contents)
           if [ -f ".env" ]; then
