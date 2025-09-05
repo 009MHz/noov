@@ -11,6 +11,9 @@ on:
         type: string
         default: "chromium" # e.g., "chromium,firefox,webkit"
 
+permissions:
+  contents: write
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
