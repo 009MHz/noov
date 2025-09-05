@@ -10,9 +10,9 @@ on:
         required: false
         type: string
         default: "chromium" # e.g., "chromium,firefox,webkit"
-
-permissions:
-  contents: write
+    secrets:
+      CREDENTIALS:
+        required: true
 
 jobs:
   prepare:
@@ -51,23 +51,28 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install -U pip
+          python -m pip install -U pip
           pip install -r requirements.txt
           python -m playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Setup auth session
+      - name: Write .env from secret
+        shell: bash
         run: |
-          echo "${{ secrets.CREDENTIALS }}" > .env
-
-          cd $GITHUB_WORKSPACE
-          # Verify the .env file exists and has content
-          if [ -f ".env" ]; then
-            echo ".env file exists with $(wc -l < .env) lines"
-          else
-            echo "ERROR: .env file is missing"
+          if [ -z "${{ secrets.CREDENTIALS }}" ]; then
+            echo "ERROR: CREDENTIALS secret is empty or not passed from caller." >&2
             exit 1
           fi
-          
+          # Write verbatim (handles multiline safely)
+          printf '%s' "${{ secrets.CREDENTIALS }}" > .env
+          # Normalize CRLF (if secret was pasted from Windows)
+          sed -i 's/\r$//' .env
+
+          # Verify without printing secrets
+          test -f .env || (echo "ERROR: .env not created" >&2; exit 1)
+          echo ".env created with $(wc -l < .env) lines"
+
+      - name: Setup auth session
+        run: |
           python -m utils.setup_session
 
       - name: Run UI tests (${{ matrix.browser }})
