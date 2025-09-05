@@ -55,36 +55,11 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Create environment file from repository secret
-        run: |
-          # Write the environment variables from the repository secret to .env file
-          echo "${{ secrets.AUTH_CREDENTIALS }}" > .env
-          
-          # Make sure the file has proper permissions
-          chmod 600 .env
-          
-          # Verify the .env file was created and has content
-          if [ -f ".env" ]; then
-            LINE_COUNT=$(wc -l < .env)
-            echo ".env file created successfully"
-            echo "File contains $LINE_COUNT lines"
-            
-            # Check if the file is effectively empty (0 or 1 empty line)
-            if [ "$LINE_COUNT" -le 1 ] && [ ! -s .env ]; then
-              echo "ERROR: .env file is empty or contains no valid configuration"
-              echo "Please make sure the AUTH_CREDENTIALS secret is properly set in your repository"
-              exit 1
-            fi
-          else
-            echo "Failed to create .env file"
-            exit 1
-          fi
-
       - name: Setup auth session
         run: |
-          # The setup_session script will now load from the .env file using dotenv
+          echo "${{ secrets.CREDENTIALS }}" > .env
+
           cd $GITHUB_WORKSPACE
-          
           # Verify the .env file exists and has content
           if [ -f ".env" ]; then
             echo ".env file exists with $(wc -l < .env) lines"
