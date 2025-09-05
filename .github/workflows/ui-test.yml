@@ -55,6 +55,8 @@ jobs:
       - name: Setup auth session
         shell: bash
         run: |
+          touch .env
+          chmod 600 .env
           echo "${{ secrets.CREDENTIALS }}" > .env
           python -m utils.setup_session
 
@@ -77,10 +79,12 @@ jobs:
       - name: Cleanup artifacts and workspace on cancellation
         if: ${{ cancelled() }}
         run: |
+          [ -f ".env" ] && rm -f .env
+          [ -d ".auth" ] && rm -rf .auth
           [ -d "allure-results" ] && rm -rf allure-results
-          echo "Cleaned up artifacts due to workflow cancellation"
 
       - name: Cleanup authentication session
         if: ${{ !cancelled() }}
         run: |
+          [ -f ".env" ] && rm -f .env
           [ -d ".auth" ] && rm -rf .auth
