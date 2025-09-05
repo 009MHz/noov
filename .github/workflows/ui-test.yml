@@ -62,8 +62,8 @@ jobs:
         run: |
           # Verify environment variables are set (masked for security)
           echo "Environment variables:"
-          echo "USER_EMAIL: ${USER_EMAIL}
-          echo "ADMIN_EMAIL: ${ADMIN_EMAIL} "
+          echo "USER_EMAIL: ${USER_EMAIL:+is set}"
+          echo "ADMIN_EMAIL: ${ADMIN_EMAIL:+is set}"
 
           cd $GITHUB_WORKSPACE
           python -m utils.setup_session
