@@ -23,7 +23,9 @@ jobs:
     steps:
       - id: mk
         run: |
-          echo "browsers_json=[$(echo "${{ inputs.browsers }}" | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/' )]" >> $GITHUB_OUTPUT
+          echo "browsers_json=$(python3 -c 'import json,os; print(json.dumps([b for b in os.environ["BROWSERS"].split(",") if b]))' )" >> $GITHUB_OUTPUT
+        env:
+          BROWSERS: ${{ inputs.browsers }}
 
   ui:
     runs-on: ubuntu-latest
