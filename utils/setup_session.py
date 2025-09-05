@@ -5,10 +5,11 @@ import asyncio
 import logging
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
+from pathlib import Path
 
 # Load environment variables from .env file
-dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
-if os.path.exists(dotenv_path):
+dotenv_path = Path(__file__).parent.parent / '.env'
+if dotenv_path.exists():
     load_dotenv(dotenv_path)
     logging.info(f"Loaded environment from {dotenv_path}")
 else:
