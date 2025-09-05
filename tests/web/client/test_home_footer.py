@@ -1,6 +1,6 @@
 import pytest
 import allure
-from sources.web.home_page import HomePage
+from sources.web.client.home_page import HomePage
 from allure import severity_level as severity
 from utils.allure_helpers import step
 

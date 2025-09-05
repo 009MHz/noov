@@ -12,6 +12,7 @@
 2. **Modularity**: Clear separation of concerns with clean abstractions
 3. **Maintainability**: Modern locators, auto-waiting, comprehensive documentation
 4. **Quality**: Type hints, error handling, parallel execution
+5. **Validity**: Always run the test whenever the code is changed
 
 ## Development Standards
 
