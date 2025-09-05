@@ -91,7 +91,7 @@ class Config:
 
     async def context_init(
         self,
-        storage_state: Optional[str] = None,
+        storage_state: Optional[str | bool] = None,
         user_type: str = "user",
         device_name: Optional[str] = None,
     ):
@@ -102,10 +102,11 @@ class Config:
         platform = os.getenv("platform", "desktop")
         context_options = self._get_device_config(platform, device_name)
 
+        # If storage_state is True or a string and we have session_handler
         if storage_state and self.session_handler:
-            session_state = await self.session_handler.create_session(user_type)
-            if session_state:
-                context_options["storage_state"] = session_state
+            session_file = await self.session_handler.create_session(user_type)
+            if session_file:
+                context_options["storage_state"] = session_file
 
         context = await self._retry_operation(
             self.browser.new_context, **context_options
@@ -125,7 +126,8 @@ class Config:
         if not self.session_handler:
             raise RuntimeError("Session handler not initialized.")
 
-        context = await self.context_init(storage_state=session_state, user_type=auth_mode, device_name=device_name)
+        # Pass True for storage_state to indicate we want to use session handling
+        context = await self.context_init(storage_state=True, user_type=auth_mode, device_name=device_name)
         if context:
             self.page = await context.new_page()
             return self.page
