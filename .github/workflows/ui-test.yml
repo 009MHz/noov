@@ -23,7 +23,7 @@ jobs:
     steps:
       - id: mk
         run: |
-          echo "browsers_json=$(python3 -c 'import json,os; print(json.dumps([b for b in os.environ["BROWSERS"].split(",") if b]))' )" >> $GITHUB_OUTPUT
+          echo "browsers_json=$(echo \"$BROWSERS\" | tr ',' '\n' | grep -v '^$' | jq -R . | jq -s .)" >> $GITHUB_OUTPUT
         env:
           BROWSERS: ${{ inputs.browsers }}
 
