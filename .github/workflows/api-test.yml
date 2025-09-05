@@ -27,7 +27,7 @@ jobs:
 
       - name: Run API tests
         run: |
-          pytest tests/api --alluredir=allure-results
+          pytest tests/api --alluredir=allure-results -n=auto --reruns=1 --reruns-delay=1
 
       - name: Upload Allure (API)
         if: always()
