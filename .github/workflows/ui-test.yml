@@ -67,14 +67,20 @@ jobs:
             --alluredir=allure-results --headless --platform=all
 
       - name: Upload Allure (UI-${{ matrix.browser }})
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: allure-ui-${{ matrix.browser }}
           path: allure-results
           if-no-files-found: warn
 
+      - name: Cleanup artifacts and workspace on cancellation
+        if: ${{ cancelled() }}
+        run: |
+          [ -d "allure-results" ] && rm -rf allure-results
+          echo "Cleaned up artifacts due to workflow cancellation"
+
       - name: Cleanup authentication session
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           [ -d ".auth" ] && rm -rf .auth
