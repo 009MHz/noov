@@ -61,18 +61,9 @@ jobs:
         id: check
         run: |
           mkdir -p ./allure-results-merged
-          # Copy all files (including screenshots and other binary attachments)
           find ./allure-results -type f -exec cp {} ./allure-results-merged/ \;
           
-          # Count and list files by type for debugging
-          echo "JSON files: $(find ./allure-results-merged -name "*.json" | wc -l)"
-          echo "PNG files: $(find ./allure-results-merged -name "*.png" | wc -l)"
-          
-          if [ "$(find ./allure-results-merged -type f | wc -l)" -gt 0 ]; then
-            echo "has_results=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_results=false" >> $GITHUB_OUTPUT
-          fi
+          echo "has_results=$([ -n "$(ls -A ./allure-results-merged 2>/dev/null)" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
       
       - name: Generate and publish Allure report
         if: steps.check.outputs.has_results == 'true'
