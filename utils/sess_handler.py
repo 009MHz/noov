@@ -1,9 +1,10 @@
 import os
+import re
 import time
 import json
 import logging
 from filelock import FileLock
-# from pages.login.login_page import LoginPage
+from sources.web.admin.login_page import LoginPage
 
 SESSION_FILE = ".auth/session.json"
 SESSION_DIR = os.path.dirname(SESSION_FILE)
@@ -62,12 +63,23 @@ class SessionHandler:
                 page = await context.new_page()
 
                 if user_type:
-                    pass
-                    # email, password = self.load_credentials(user_type)
-                    # sess = LoginPage(page)
-                    # await sess.create_session(email, password)
-                    # logging.info(f"Login Success for {user_type}, Creating the session file . . .")
-                    # await context.storage_state(path=SESSION_FILE)
-                    # await context.close()
+                    email, password = self.load_credentials(user_type)
+                    sess = LoginPage(page)
+                    await sess.open()
+                    # Use the login method which handles both filling and submitting the form
+                    await sess.login(email, password)
+                    
+                    # Wait for navigation to confirm login success
+                    try:
+                        await page.wait_for_url(re.compile(r"/profile|/dashboard|/home"), timeout=5000)
+                        logging.info(f"Login Success for {user_type}, Creating the session file . . .")
+                        await context.storage_state(path=SESSION_FILE)
+                    except Exception as e:
+                        logging.error(f"Login failed for {user_type}: {str(e)}")
+                        # Take a screenshot for debugging
+                        await page.screenshot(path=f"{SESSION_DIR}/{user_type}_login_failed.png")
+                        raise
+                    finally:
+                        await context.close()
 
         return SESSION_FILE
