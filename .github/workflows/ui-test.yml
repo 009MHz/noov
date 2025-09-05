@@ -57,13 +57,13 @@ jobs:
           python -m playwright install --with-deps
 
       - name: Setup auth session
-        env:
-          USER_EMAIL: ${{ secrets.USER_EMAIL }}
-          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-
         run: |
+          # Create .env file from GitHub secret
+          echo "${{ secrets.AUTH_CREDENTIALS }}" > .env
+          
+          # Export environment variables from .env file
+          export $(grep -v '^#' .env | xargs)
+          
           cd $GITHUB_WORKSPACE
           python -m utils.setup_session
 
