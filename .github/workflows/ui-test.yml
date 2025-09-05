@@ -56,6 +56,11 @@ jobs:
           fi
           python -m playwright install --with-deps
 
+      - name: Setup auth session
+        run: |
+          # Use the existing setup_session script
+          python utils/setup_session.py
+          
       - name: Run UI tests (${{ matrix.browser }})
         run: |
           pytest tests/web \
@@ -71,3 +76,14 @@ jobs:
           name: allure-ui-${{ matrix.browser }}
           path: allure-results
           if-no-files-found: warn
+          
+      - name: Cleanup authentication session
+        if: always()
+        run: |
+          # Check if .auth directory exists before removing
+          if [ -d ".auth" ]; then
+            rm -rf .auth
+            echo "Authentication session files removed"
+          else
+            echo "No authentication session files found to clean up"
+          fi
