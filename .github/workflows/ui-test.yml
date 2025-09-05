@@ -52,10 +52,11 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Create .env file from secret
+      - name: Create .env file from repository secret
         run: |
-          # Create .env file from GitHub secret
-          echo "${{ secrets.AUTH_CREDENTIALS }}" > .env
+          # Load the entire .env file content from the DOTENV_E2E secret
+          echo "${{ secrets.DOTENV_E2E }}" > .env
+          echo "Created .env file from repository secret"
           
           # Verify the .env file was created (without showing contents)
           if [ -f ".env" ]; then
@@ -69,6 +70,12 @@ jobs:
           fi
 
       - name: Setup auth session
+        env:
+          # Make the secrets available as environment variables (redundant but helps with debugging)
+          USER_EMAIL: ${{ secrets.USER_EMAIL }}
+          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
           # The setup_session script will read from the .env file
           cd $GITHUB_WORKSPACE
