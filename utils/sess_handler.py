@@ -33,10 +33,20 @@ class SessionHandler:
         email = os.getenv(f"USER_EMAIL_{user_type.upper()}")
         password = os.getenv(f"USER_PASSWORD_{user_type.upper()}")
 
+        # If not available, use default testing credentials based on user type
+        if not email or not password:
+            if user_type.lower() == "user":
+                email = "germa69.reiju@gmail.com"
+                password = "Test123"
+            elif user_type.lower() == "admin":
+                email = "harits.satriyo@noovoleum.com" 
+                password = "Halo123456"
+            # Add more user types as needed
+        
         if email and password:
             return email, password
         else:
-            raise ValueError(f"Credentials for {user_type} not found in environment variables")
+            raise ValueError(f"Credentials for {user_type} not found and no defaults available")
 
     async def create_session(self, user_type: str):
         if not os.path.exists(SESSION_DIR):
