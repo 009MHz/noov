@@ -60,10 +60,18 @@ jobs:
           # Make sure the file has proper permissions
           chmod 600 .env
           
-          # Verify the .env file was created
+          # Verify the .env file was created and has content
           if [ -f ".env" ]; then
+            LINE_COUNT=$(wc -l < .env)
             echo ".env file created successfully"
-            echo "File contains $(wc -2 < .env) lines"
+            echo "File contains $LINE_COUNT lines"
+            
+            # Check if the file is effectively empty (0 or 1 empty line)
+            if [ "$LINE_COUNT" -le 1 ] && [ ! -s .env ]; then
+              echo "ERROR: .env file is empty or contains no valid configuration"
+              echo "Please make sure the ENV_VARIABLES secret is properly set in your repository"
+              exit 1
+            fi
           else
             echo "Failed to create .env file"
             exit 1
