@@ -54,17 +54,17 @@ jobs:
 
       - name: Setup auth session
         env:
-          # Set authentication credentials directly from GitHub secrets
-          USER_EMAIL: ${{ secrets.USER_EMAIL }}
-          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+            # Set authentication credentials directly from GitHub secrets
+            USER_EMAIL: ${{ secrets.USER_EMAIL }}
+            USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+            ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+            ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
           # Verify environment variables are set (masked for security)
           echo "Environment variables:"
-          echo "USER_EMAIL: ${USER_EMAIL:0:3}*****"
-          echo "ADMIN_EMAIL: ${ADMIN_EMAIL:0:3}*****"
-          
+          echo "USER_EMAIL: ${USER_EMAIL}
+          echo "ADMIN_EMAIL: ${ADMIN_EMAIL} "
+
           cd $GITHUB_WORKSPACE
           python -m utils.setup_session
 
