@@ -52,49 +52,23 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Create .env file directly in workflow
+      - name: Create .env file
         run: |
-          # Create the .env file with all required configuration
-          cat > .env << 'EOF'
-          API_URL="https://api.noovoleum.com"
-          PYTHONDONTWRITEBYTECODE=1
-          AUTH_MODE="admin"
-          USER_EMAIL="germa69.reiju@gmail.com"
-          USER_PASSWORD="Test123"
-          ADMIN_EMAIL="harits.satriyo@noovoleum.com"
-          ADMIN_PASSWORD="Halo123456"
-          USER_2FA_EMAIL=""
-          USER_2FA_PASSWORD=""
-          USER_2FA_CODE=""
-          INVALID_TEST_EMAIL="invalid@example.com"
-          INVALID_FORMAT_EMAIL="test@example"
-          INVALID_TFA_CODE="000000"
-          TEST_EMAIL="test@example.com"
-          EOF
-          
-          echo "Created .env file directly in workflow"
-          
-          # Verify the .env file was created (without showing contents)
-          if [ -f ".env" ]; then
-            echo ".env file created successfully"
-            # Count the number of non-empty lines as a basic validation
-            NON_EMPTY_LINES=$(grep -v '^$' .env | wc -l)
-            echo "Number of configuration lines: $NON_EMPTY_LINES"
-          else
-            echo "Failed to create .env file"
-            exit 1
-          fi
+          echo "${{ secrets.AUTH_CREDENTIALS }}" > .env
 
       - name: Setup auth session
-        env:
-          # Make the secrets available as environment variables (redundant but helps with debugging)
-          USER_EMAIL: ${{ secrets.USER_EMAIL }}
-          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          # The setup_session script will read from the .env file
+          # The setup_session script will now load from the .env file using dotenv
           cd $GITHUB_WORKSPACE
+          
+          # Verify the .env file exists and has content
+          if [ -f ".env" ]; then
+            echo ".env file exists with $(wc -l < .env) lines"
+          else
+            echo "ERROR: .env file is missing"
+            exit 1
+          fi
+          
           python -m utils.setup_session
 
       - name: Run UI tests (${{ matrix.browser }})
