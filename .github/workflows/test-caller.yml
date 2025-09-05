@@ -22,7 +22,7 @@ on:
         default: 'chromium'
 
 permissions:
-  contents: write  # needed for gh-pages push
+  contents: write  # keep if you need gh-pages in other jobs
 
 jobs:
   meta:
@@ -41,11 +41,14 @@ jobs:
     with:
       base_url: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || 'https://noovoleum.com' }}
       browsers:  ${{ github.event_name == 'workflow_dispatch' && inputs.browsers  || 'chromium' }}
+    secrets:
+      CREDENTIALS: ${{ secrets.CREDENTIALS }}
 
   api:
     needs: meta
     if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_api) || (github.event_name != 'workflow_dispatch') }}
     uses: ./.github/workflows/api-test.yml
+
 
   # report-builder:
   #   runs-on: ubuntu-latest
