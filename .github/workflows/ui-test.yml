@@ -57,9 +57,7 @@ jobs:
       - name: Setup auth session
         shell: bash
         run: |
-          touch .env
-          chmod 600 .env
-          echo "${{ secrets.CREDENTIALS }}" > .env
+          printf '%s' "${{ secrets.CREDENTIALS }}" > .env
           python -m utils.setup_session
 
       - name: Run UI tests (${{ matrix.browser }})
