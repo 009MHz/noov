@@ -60,7 +60,6 @@ class TestLogin:
             )
 
         with step("Verify successful redirect to secure area"):
-            await page.wait_for_url(re.compile(r"/dashboard"))
             await expect(page).to_have_url(re.compile(r"/dashboard"))
     
     @allure.title("Login with invalid credentials")
