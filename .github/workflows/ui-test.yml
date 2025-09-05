@@ -77,7 +77,8 @@ jobs:
             --browser ${{ matrix.browser }} \
             --base-url=${{ inputs.base_url }} \
             -n=auto --reruns 1 --reruns-delay 2 \
-            --alluredir=allure-results --headless --platform=all
+            --alluredir=allure-results --headless --platform=all \
+            --env=pipeline --mode=pipeline
 
       - name: Upload Allure (UI-${{ matrix.browser }})
         if: always()
