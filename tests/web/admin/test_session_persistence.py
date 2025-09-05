@@ -38,9 +38,6 @@ class TestSessionPersistence:
         - Either the DashboardProfile text or 2FA alert element is visible
         """
         
-        # The user_auth fixture from conftest.py already provides a page with authentication
-        # It uses runner.setup_auth_page() which handles the authentication via the SessionHandler
-        
         with step("Navigate directly to profile page with auth cookies"):
             await user_auth.goto("https://manage-dev.noovoleum.com/profile")
             await expect(user_auth).to_have_url("https://manage-dev.noovoleum.com/profile")
