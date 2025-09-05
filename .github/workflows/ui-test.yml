@@ -52,9 +52,22 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Create .env file
+      - name: Create environment file from repository secret
         run: |
-          echo "${{ secrets.AUTH_CREDENTIALS }}" > .env
+          # Write the environment variables from the repository secret to .env file
+          echo "${{ secrets.ENV_VARIABLES }}" > .env
+          
+          # Make sure the file has proper permissions
+          chmod 600 .env
+          
+          # Verify the .env file was created
+          if [ -f ".env" ]; then
+            echo ".env file created successfully"
+            echo "File contains $(wc -2 < .env) lines"
+          else
+            echo "Failed to create .env file"
+            exit 1
+          fi
 
       - name: Setup auth session
         run: |
@@ -77,8 +90,7 @@ jobs:
             --browser ${{ matrix.browser }} \
             --base-url=${{ inputs.base_url }} \
             -n=auto --reruns 1 --reruns-delay 2 \
-            --alluredir=allure-results --headless --platform=all \
-            --env=pipeline --mode=pipeline
+            --alluredir=allure-results --headless --platform=all
 
       - name: Upload Allure (UI-${{ matrix.browser }})
         if: always()
