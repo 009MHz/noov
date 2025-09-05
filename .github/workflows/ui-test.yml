@@ -9,7 +9,7 @@ on:
       browsers:
         required: false
         type: string
-        default: 'chromium'   # e.g., "chromium,firefox,webkit"
+        default: "chromium" # e.g., "chromium,firefox,webkit"
 
 jobs:
   prepare:
@@ -37,7 +37,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -57,10 +57,16 @@ jobs:
           python -m playwright install --with-deps
 
       - name: Setup auth session
+        env:
+          USER_EMAIL: ${{ secrets.USER_EMAIL }}
+          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
         run: |
           cd $GITHUB_WORKSPACE
           python -m utils.setup_session
-          
+
       - name: Run UI tests (${{ matrix.browser }})
         run: |
           pytest tests/web \
@@ -76,7 +82,7 @@ jobs:
           name: allure-ui-${{ matrix.browser }}
           path: allure-results
           if-no-files-found: warn
-          
+
       - name: Cleanup authentication session
         if: always()
         run: |
