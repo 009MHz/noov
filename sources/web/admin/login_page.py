@@ -55,9 +55,7 @@ class LoginPage:
         await self.fill_password(password)
         if tfa_code:
             await self.fill_2fa_code(tfa_code)
-        return self
 
     async def login(self, email: str, password: str, tfa_code: Optional[str] = None):
         await self.fill_credentials(email, password, tfa_code)
         await self.click_login()
-        return self
