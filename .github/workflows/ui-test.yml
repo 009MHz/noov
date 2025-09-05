@@ -23,10 +23,7 @@ jobs:
     steps:
       - id: mk
         run: |
-          RAW="${{ inputs.browsers }}"
-          RAW_NO_SPACE="$(echo "$RAW" | tr -d '[:space:]')"
-          JSON_ARRAY="$(printf '%s' "$RAW_NO_SPACE" | awk -F, 'BEGIN{printf "["}{for(i=1;i<=NF;i++){printf "%s\"%s\"", (i>1?",":""), $i} printf "]"}')"
-          echo "browsers_json=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
+          echo "browsers_json=[$(echo "${{ inputs.browsers }}" | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/' )]" >> $GITHUB_OUTPUT
 
   ui:
     runs-on: ubuntu-latest
@@ -52,26 +49,13 @@ jobs:
 
       - name: Install deps
         run: |
-          python -m pip install -U pip
           pip install -r requirements.txt
           python -m playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Write .env from secret
+      - name: Setup auth session
         shell: bash
         run: |
-          if [ -z "${{ secrets.CREDENTIALS }}" ]; then
-            echo "ERROR: CREDENTIALS secret is empty or not passed from caller." >&2
-            exit 1
-          fi
-          # Write verbatim and normalize CRLF
-          printf '%s' "${{ secrets.CREDENTIALS }}" > .env
-          sed -i 's/\r$//' .env
-          
-          # Basic verification
-          test -f .env || (echo "ERROR: .env not created" >&2; exit 1)
-
-      - name: Setup auth session
-        run: |
+          echo "${{ secrets.CREDENTIALS }}" > .env
           python -m utils.setup_session
 
       - name: Run UI tests (${{ matrix.browser }})
