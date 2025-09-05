@@ -20,7 +20,7 @@ jobs:
           key: ${{ runner.os }}-pip-api-${{ hashFiles('**/requirements.txt') }}
           restore-keys: ${{ runner.os }}-pip-api-
 
-      - name: Install deps
+      - name: Package installation
         run: |
           pip install -U pip
           pip install -r requirements.txt
