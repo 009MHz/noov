@@ -1,0 +1,19 @@
+{
+  "status": 404,
+  "status_text": "Not Found",
+  "url": "https://api.noovoleum.com/open_api/boxes/non-existent-noovo-id-12345",
+  "headers": {
+    "date": "Fri, 05 Sep 2025 12:08:32 GMT",
+    "content-type": "text/html; charset=utf-8",
+    "content-length": "181",
+    "connection": "keep-alive",
+    "x-powered-by": "potato",
+    "access-control-allow-methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+    "access-control-allow-headers": "Origin, Content-Type, X-Auth-Token, X-Access-Token, Authorization, X-Dashboard-Brand, X-Country",
+    "x-robots-tag": "noindex, nofollow, nosnippet, noarchive",
+    "server": "kentang/69.420.177013 (Solanum tuberosum)",
+    "content-security-policy": "default-src 'none'",
+    "x-content-type-options": "nosniff"
+  },
+  "ok": false
+}
