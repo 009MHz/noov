@@ -52,19 +52,25 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Setup auth session
-        env:
-            # Set authentication credentials directly from GitHub secrets
-            USER_EMAIL: ${{ secrets.USER_EMAIL }}
-            USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
-            ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-            ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      - name: Create .env file from secret
         run: |
-          # Verify environment variables are set (masked for security)
-          echo "Environment variables:"
-          echo "USER_EMAIL: ${USER_EMAIL:+is set}"
-          echo "ADMIN_EMAIL: ${ADMIN_EMAIL:+is set}"
+          # Create .env file from GitHub secret
+          echo "${{ secrets.AUTH_CREDENTIALS }}" > .env
+          
+          # Verify the .env file was created (without showing contents)
+          if [ -f ".env" ]; then
+            echo ".env file created successfully"
+            # Count the number of non-empty lines as a basic validation
+            NON_EMPTY_LINES=$(grep -v '^$' .env | wc -l)
+            echo "Number of configuration lines: $NON_EMPTY_LINES"
+          else
+            echo "Failed to create .env file"
+            exit 1
+          fi
 
+      - name: Setup auth session
+        run: |
+          # The setup_session script will read from the .env file
           cd $GITHUB_WORKSPACE
           python -m utils.setup_session
 
