@@ -1,6 +1,0 @@
-{
-  "method": "GET",
-  "url": "https://api.noovoleum.com/open_api/boxes/non-existent-noovo-id-12345",
-  "headers": null,
-  "params": null
-}
