@@ -1,7 +1,9 @@
 name: Test Producer
 on:
-  push:
+  # push:
   pull_request:
+    branches:
+      - staging
   workflow_dispatch:
     inputs:
       run_ui:
