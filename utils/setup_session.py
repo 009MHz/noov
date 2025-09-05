@@ -47,12 +47,11 @@ async def setup_session(user_types=None):
     logging.info("Session setup completed")
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        if sys.argv[1].lower() == "all" or len(sys.argv) == 1:
-            user_types = ["user", "admin"]
-        else:
-            user_types = sys.argv[1:]
+    if len(sys.argv) == 1:
+        user_types = ["user", "admin"]
+    elif sys.argv[1].lower() == "all":
+        user_types = ["user", "admin"]
     else:
-        user_types = ["user", "admin"] 
+        user_types = sys.argv[1:]
     # Run the session setup
     asyncio.run(setup_session(user_types))
