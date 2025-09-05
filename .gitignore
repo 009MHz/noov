@@ -174,3 +174,4 @@ firefox_profile/
 # Allure temporary files
 .allure/
 /noovo/
+.auth/
