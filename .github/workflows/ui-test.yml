@@ -4,12 +4,16 @@ on:
   workflow_call:
     inputs:
       base_url:
-        required: true
+        required: false
         type: string
+        default: ""
       browsers:
         required: false
         type: string
-        default: 'chromium'   # e.g., "chromium,firefox,webkit"
+        default: "chromium" # e.g., "chromium,firefox,webkit"
+    secrets:
+      CREDENTIALS:
+        required: true
 
 jobs:
   prepare:
@@ -19,10 +23,7 @@ jobs:
     steps:
       - id: mk
         run: |
-          RAW="${{ inputs.browsers }}"
-          RAW_NO_SPACE="$(echo "$RAW" | tr -d '[:space:]')"
-          JSON_ARRAY="$(printf '%s' "$RAW_NO_SPACE" | awk -F, 'BEGIN{printf "["}{for(i=1;i<=NF;i++){gsub(/"/,"",$i); printf "%s\"%s\"", (i>1?",":""), $i} printf "]"}')"
-          echo "browsers_json=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
+              echo "browsers_json=[$(echo "${{ inputs.browsers }}" | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/' )]" >> $GITHUB_OUTPUT
 
   ui:
     runs-on: ubuntu-latest
@@ -37,7 +38,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -46,15 +47,16 @@ jobs:
           key: ${{ runner.os }}-pip-ui-${{ hashFiles('**/requirements.txt') }}
           restore-keys: ${{ runner.os }}-pip-ui-
 
-      - name: Install deps
+      - name: UI Lib installation
         run: |
-          pip install -U pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          else
-            pip install pytest pytest-playwright allure-pytest pytest-xdist pytest-rerunfailures
-          fi
-          python -m playwright install --with-deps
+          pip install -r requirements.txt
+          python -m playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Setup auth session
+        shell: bash
+        run: |
+          printf '%s' "${{ secrets.CREDENTIALS }}" > .env
+          python -m utils.setup_session
 
       - name: Run UI tests (${{ matrix.browser }})
         run: |
@@ -65,9 +67,22 @@ jobs:
             --alluredir=allure-results --headless --platform=all
 
       - name: Upload Allure (UI-${{ matrix.browser }})
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: allure-ui-${{ matrix.browser }}
           path: allure-results
           if-no-files-found: warn
+
+      - name: Cleanup artifacts and workspace on cancellation
+        if: ${{ cancelled() }}
+        run: |
+          [ -f ".env" ] && rm -f .env
+          [ -d ".auth" ] && rm -rf .auth
+          [ -d "allure-results" ] && rm -rf allure-results
+
+      - name: Cleanup authentication session
+        if: ${{ !cancelled() }}
+        run: |
+          [ -f ".env" ] && rm -f .env
+          [ -d ".auth" ] && rm -rf .auth

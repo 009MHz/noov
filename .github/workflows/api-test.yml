@@ -20,18 +20,14 @@ jobs:
           key: ${{ runner.os }}-pip-api-${{ hashFiles('**/requirements.txt') }}
           restore-keys: ${{ runner.os }}-pip-api-
 
-      - name: Install deps
+      - name: Package installation
         run: |
           pip install -U pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          else
-            pip install pytest allure-pytest httpx
-          fi
+          pip install -r requirements.txt
 
       - name: Run API tests
         run: |
-          pytest tests/api --alluredir=allure-results
+          pytest tests/api --alluredir=allure-results -n=auto --reruns=1 --reruns-delay=1
 
       - name: Upload Allure (API)
         if: always()
