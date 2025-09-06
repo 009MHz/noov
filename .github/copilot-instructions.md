@@ -18,15 +18,51 @@
 
 ### Project Structure
 ```
-tests/
-├── web/          # Web UI tests
-├── mobile/       # Mobile app tests
-└── api/          # API tests
-sources/
-├── web/          # Web page objects
-├── mobile/       # Mobile page objects
-└── api/          # API clients
-utils/            # Shared utilities and fixtures
+noovoleum/
+├── .auth/                          # Authentication configurations
+├── .github/                        # GitHub configurations
+│   ├── workflows/                  # GitHub Actions workflows
+│   └── copilot-instructions.md     # GitHub Copilot instructions
+├── .venv/                          # Python virtual environment
+├── reports/                        # Test execution reports
+├── tests/                          # Test suites
+│   ├── api/                        # API tests
+│   ├── web/                        # Web UI tests
+│   │   ├── admin/                  # Admin portal tests
+│   │   │   ├── dashboard/          # Dashboard tests (empty)
+│   │   │   └── login_portal/       # Login portal tests
+│   │   └── client/                 # Client-facing tests
+│   ├── mobile/                     # Mobile app tests
+│   │   ├── android/                # Android-specific tests
+│   │   └── ios/                    # iOS-specific tests
+│   ├── performance/                # Performance tests
+│   │   └── locustfile.py           # Locust performance test file
+│   └── fixtures/                   # Test fixtures
+│       └── login_fixtures.py       # Login-related fixtures
+├── sources/                        # Page objects and clients
+│   ├── web/                        # Web page objects
+│   │   ├── admin/                  # Admin portal page objects
+│   │   └── client/                 # Client-facing page objects
+│   ├── mobile/                     # Mobile app page objects
+│   │   ├── android/                # Android page objects
+│   │   └── ios/                    # iOS page objects
+│   └── api/                        # API clients
+│       ├── __base.py               # Base API client
+│       └── clients/                # API client implementations
+├── utils/                          # Shared utilities
+│   ├── allure_helpers.py           # Allure reporting utilities
+│   ├── api_config.py               # API configuration utilities
+│   ├── browser_config.py           # Browser configuration utilities
+│   ├── pytest_config.py           # pytest configuration utilities
+│   ├── sess_handler.py             # Session handling utilities
+│   ├── setup_session.py            # Session setup utilities
+│   └── README.md                   # Utils documentation
+├── .env                            # Environment variables
+├── .gitignore                      # Git ignore rules
+├── conftest.py                     # pytest configuration
+├── pytest.ini                     # pytest settings
+├── README.md                       # Project documentation
+└── requirements.txt                # Python dependencies
 ```
 
 ### Code Requirements
