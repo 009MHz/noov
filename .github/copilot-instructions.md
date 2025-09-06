@@ -1,21 +1,34 @@
 # Copilot Instructions for Test Automation Framework
 
+## Goals (Scope & Priorities)
+
+* Unified, **async-first** automation across **Web (Playwright)**, **API (Playwright request)**, and **Mobile (Appium)**.
+* **POM** everywhere: intent-level methods in page/screens; assertions live in tests.
+* **Deterministic** runs (no arbitrary sleeps). Prefer explicit waits/expectations.
+* **Reportability** (Allure) and **repeatability** (CI matrix) as first-class.
+
 ## Framework Stack
-- **Language**: Python with async/await
-- **Testing**: Playwright (Web/API), Appium (Mobile), Locust (Performance)
-- **Pattern**: Page Object Model (POM)
-- **Reporting**: Allure with GitHub Pages hosting
-- **CI/CD**: GitHub Actions with matrix testing
+
+* **Language**: Python **3.10+** with `async/await`
+* **Web/UI**: Playwright (async), pytest
+* **API**: Playwright request context (async)
+* **Mobile**: Appium (Python client) via **async bridge** (see below)
+* **Performance**: Locust (optional)
+* **Pattern**: Page Object Model (POM) for web & mobile
+* **Reporting**: Allure (local + GitHub Pages)
+* **CI/CD**: GitHub Actions with browser/device matrix & artifacts
 
 ## Core Principles
-1. **Scalability**: Multi-platform support (Web, Mobile, API)
-2. **Modularity**: Clear separation of concerns with clean abstractions
-3. **Maintainability**: Modern locators, auto-waiting, comprehensive documentation
-4. **Quality**: Type hints, error handling, parallel execution
-5. **Validity**: Always run the test whenever the code is changed
 
-## Development Standards
+1. **Scalability**: Multi-platform (web, api, mobile) with consistent conventions.
+2. **Modularity**: POM + fixtures + utilities—clean separation of concerns.
+3. **Maintainability**: Modern locators, minimal coupling, typed helpers.
+4. **Quality**: Type hints, meaningful errors/logging, parallel by default.
+5. **Continuous Validity**: On every change, tests run in local first; block merges on red.
 
+## Project Structure (authoritative)
+
+```
 ### Project Structure
 ```
 noovoleum/
@@ -49,14 +62,7 @@ noovoleum/
 │   └── api/                        # API clients
 │       ├── __base.py               # Base API client
 │       └── clients/                # API client implementations
-├── utils/                          # Shared utilities
-│   ├── allure_helpers.py           # Allure reporting utilities
-│   ├── api_config.py               # API configuration utilities
-│   ├── browser_config.py           # Browser configuration utilities
-│   ├── pytest_config.py           # pytest configuration utilities
-│   ├── sess_handler.py             # Session handling utilities
-│   ├── setup_session.py            # Session setup utilities
-│   └── README.md                   # Utils documentation
+├── utils/                          # Shared utilities            
 ├── .env                            # Environment variables
 ├── .gitignore                      # Git ignore rules
 ├── conftest.py                     # pytest configuration
@@ -65,73 +71,254 @@ noovoleum/
 └── requirements.txt                # Python dependencies
 ```
 
-### Code Requirements
-- **Async Operations**: Use async/await for all Playwright interactions
-- **Modern Locators**: Prioritize `get_by_role()`, `get_by_text()`, `get_by_label()`
-- **Type Hints**: Include comprehensive type annotations
-- **Documentation**: Document complex logic, not simple actions
-- **Error Handling**: Implement robust error handling and logging
+## Development Standards
 
-### Test Implementation
+### Async Everywhere (with Mobile Bridge)
 
-#### File Organization
-- **Naming**: `test_<feature>.py` convention
-- **Location**: Platform-specific directories (`tests/web/`, `tests/api/`, etc.)
-- **Scope**: One test file per major feature or page
+* **Web/API**: native async (Playwright).
+* **Mobile (Appium)**: Appium’s Python client is sync. Wrap calls in an **async bridge** (`asyncio.to_thread` or `anyio.to_thread.run_sync`) so tests & fixtures **remain async**.
 
-#### Required Imports
+**Pattern (async bridge helper):**
+
 ```python
-from playwright.async_api import Page, expect
+# utils/async_bridge.py
+from asyncio import to_thread
+def aify(fn):
+    async def _inner(*args, **kwargs):
+        return await to_thread(fn, *args, **kwargs)
+    return _inner
 ```
 
-#### Test Structure
-- **Setup**: Use `page.goto()` at test start; shared setup via pytest fixtures
-- **Pattern**: Follow AAA (Arrange, Act, Assert) pattern
-- **Focus**: One test per feature/user story for better maintainability
+**Use in a screen object:**
 
-#### Locators & Interactions
-- **Priority Order**: `get_by_role()` > `get_by_label()` > `get_by_text()` > CSS selectors
-- **Auto-waiting**: Rely on Playwright's built-in waiting mechanisms
-- **Timeouts**: Avoid hard-coded waits; use default timeouts
-
-#### Assertions
-- **Test Script Location**: Keep all assertions in test scripts, NOT in page objects
-- **Separation of Concerns**: Page objects should return elements/data; tests should verify behavior
-- **Priority**: Prioritize the `expect` syntax from playwright before using any assertions
-- **Counts**: `expect(locator).to_have_count()` for element quantities
-- **Text Matching**: `to_have_text()` (exact) vs `to_contain_text()` (partial)
-- **Navigation**: `expect(page).to_have_url()` for URL verification
-- **Avoid**: `expect(locator).to_be_visible()` unless testing visibility changes
-
-#### Page Object Model
-- **Encapsulation**: Wrap element interactions in methods that return data/elements
-- **No Assertions**: Page objects should NOT contain assertions or test logic
-- **Return Values**: Methods should return elements, text, or boolean states for test verification
-- **Platform-specific**: Separate classes for web/mobile implementations
-- **Composition**: Prefer composition over inheritance
-- **Reusability**: Create shared base classes for common functionality
-
-#### Test-Page Object Interaction Pattern
 ```python
-# ✅ Correct: Assertion in test script
-def test_login_success(page: Page):
-    login_page = LoginPage(page)
-    login_page.fill_credentials("user", "pass")
-    login_page.click_login()
-    
-    # Assertions belong in test
-    expect(page).to_have_url("/dashboard")
-    expect(login_page.get_welcome_message()).to_contain_text("Welcome")
+# sources/mobile/android/login_screen.py
+from utils.async_bridge import aify
 
-# ❌ Incorrect: Assertion in page object
+class AndroidLoginScreen:
+    def __init__(self, driver):  # driver: appium.webdriver.Remote
+        self.driver = driver
+
+    @property
+    def email(self):
+        return self.driver.find_element("accessibility id", "emailInput")
+
+    @property
+    def password(self):
+        return self.driver.find_element("accessibility id", "passwordInput")
+
+    @aify
+    def _type_email(self, value: str):
+        self.email.clear(); self.email.send_keys(value)
+
+    @aify
+    def _type_password(self, value: str):
+        self.password.clear(); self.password.send_keys(value)
+
+    @aify
+    def _tap_login(self):
+        self.driver.find_element("accessibility id", "loginButton").click()
+
+    async def login_as(self, email: str, password: str):
+        await self._type_email(email)
+        await self._type_password(password)
+        await self._tap_login()
+```
+
+> Copilot: when generating **mobile** code, always keep **tests async** and **wrap driver calls** with the bridge. Never block the event loop with raw sleeps.
+
+### POM Rules (Web & Mobile)
+
+* Expose **intent methods** (e.g., `login_as`, `filter_by_status`, `open_drawer`).
+* Keep **assertions in tests**, not in page/screen classes.
+* Return **data/locators/states** from POM for the test to assert.
+* Prefer **composition** over inheritance. Create small, well-named helpers.
+
+### Locators & Interactions (Web)
+
+Order of preference:
+
+1. `get_by_role(name=...)`
+2. `get_by_label(...)`, `get_by_placeholder(...)`
+3. `get_by_test_id(...)`
+4. `get_by_text(...)` (scoped to a container)
+5. Minimal CSS fallback (avoid brittle selectors; avoid XPath unless necessary)
+
+**Expectations**:
+
+* Use `expect(...)` for stability (visibility, URL, text, attributes).
+* No `time.sleep`. If needed, do targeted waits (e.g., `expect(locator).to_be_visible()` when visibility is the behavior under test).
+
+### API Testing
+
+* Use Playwright’s `request.new_context()` fixture.
+* Centralize base URL/headers and token/session handling.
+* Validate status, structure, and critical fields (schema helpers optional).
+
+### Test Structure & Naming
+
+* Files: `tests/<platform>/<area>/test_<feature>.py`
+* Inside tests: **AAA** (Arrange–Act–Assert) with blank lines separating sections.
+* Keep tests ≤ 60 LOC when possible; split flows rather than build “mega-tests.”
+
+### Type Hints & Docs
+
+* Type annotate POM interfaces and fixtures.
+* Docstring complex flows; skip obvious one-liners.
+
+### Error Handling & Logging
+
+* Raise meaningful exceptions in helpers (e.g., domain errors).
+* Capture artifacts on failure: screenshot, console, trace (web); driver logs/screenshots (mobile).
+
+## Fixtures & Environment
+
+### Web & API (async)
+
+* `page` fixture (headless controlled by env; default headless in CI).
+* `auth_context` or storage state fixture for explicit session reuse.
+* `request_context` fixture for API with base URL & headers.
+
+### Mobile (Appium) – async wrapper fixture
+
+```python
+# tests/fixtures/appium_fixtures.py
+import os, asyncio
+import pytest
+from appium import webdriver
+from utils.async_bridge import aify
+
+@pytest.fixture
+async def android_driver():
+    caps = {
+        "platformName": "Android",
+        "automationName": "UiAutomator2",
+        "deviceName": os.getenv("ANDROID_DEVICE", "emulator-5554"),
+        "app": os.getenv("ANDROID_APP_APK"),  # path or app package/activity if preinstalled
+        "newCommandTimeout": 120
+    }
+    def _create():
+        return webdriver.Remote(os.getenv("APPIUM_SERVER", "http://127.0.0.1:4723/wd/hub"), caps)
+    driver = await asyncio.to_thread(_create)
+    yield driver
+    await asyncio.to_thread(driver.quit)
+```
+
+> Copilot: When generating mobile tests, inject `android_driver`/`ios_driver`, build POM screens, call intent methods with `await` (they’re async thanks to the bridge).
+
+## Assertions (Canonical)
+
+* **Keep all assertions in tests.**
+* Prefer `expect` (web) and deterministic state checks (mobile API responses, UI states).
+* URL checks: `expect(page).to_have_url(...)`.
+* Counts: `expect(locator).to_have_count(n)`.
+* Text: `to_have_text` (exact) vs `to_contain_text` (partial).
+
+## Execution & CI/CD
+
+### Local Commands (suggest defaults)
+
+```bash
+# Install
+pip install -r requirements.txt
+playwright install
+
+# Web UI
+pytest tests/web -m ui --alluredir=./reports/allure-results
+
+# API
+pytest tests/api -m api --alluredir=./reports/allure-results
+
+# Mobile (Appium server must be running; ANDROID_* env prepared)
+pytest tests/mobile -m mobile --alluredir=./reports/allure-results
+
+# Allure
+allure generate ./reports/allure-results -o ./reports/allure-report --clean
+```
+
+### GitHub Actions (expectations)
+
+* Matrix: `{ browser: [chromium, firefox, webkit] }` for web; optional `{ mobile: [android, ios] }` job(s) gated behind labels or separate workflow.
+* Install: `playwright install --with-deps`
+* Cache: pip & browsers
+* Artifacts: `allure-results`, screenshots, videos, Playwright trace
+* Deploy Allure to GH Pages on `main`
+
+## Pull Request Checklist (Copilot must enforce)
+
+* Tests added/updated; fast & deterministic
+* POM methods expose **intent**; no assertions inside POM
+* Async-safe: no blocking sleeps; mobile wrapped with async bridge
+* Env-aware; secrets not committed
+* Lint/type checks pass (ruff/flake8/mypy if present)
+* CI green; artifacts uploaded; docs/README updated if needed
+
+## Copilot Prompt Patterns (use verbatim as templates)
+
+**Add a Web Page Object**
+
+> Create `sources/web/admin/login_page.py` with intent methods: `open()`, `login_as(email, password)`. Prefer `get_by_role`, then `get_by_label`. Return essential locators/data but no assertions. Add docstrings and type hints.
+
+**Create a Web Test**
+
+> Create `tests/web/admin/login_portal/test_login_success.py`. Use async Playwright fixtures, AAA, and `expect(page).to_have_url("/dashboard")` after `LoginPage.login_as(...)`. Keep ≤60 LOC.
+
+**Add an API Test**
+
+> Create `tests/api/test_admin_login.py` using `request_context` fixture. POST `/admin/login`, assert 200 and presence of `token`. No sleeps; add minimal schema check helper if available.
+
+**Add an Android Screen + Test**
+
+> Create `sources/mobile/android/login_screen.py` using the async bridge (`aify`) to wrap driver calls. Intent method: `login_as(email, password)`. Then create `tests/mobile/android/test_login_flow.py` using `android_driver` fixture and assert landing activity/text (assertions in test only).
+
+## Non-Goals & Gotchas
+
+* ❌ No arbitrary `time.sleep`—ever.
+* ❌ Don’t couple selectors to visual libraries (e.g., raw MUI classnames).
+* ❌ Don’t put assertions inside POM/screen classes.
+* ⚠️ Appium remains sync under the hood—**always** go through the async bridge in async tests.
+* ⚠️ For flakiness: prefer role/label/testid; add explicit waits only when behavior demands it.
+
+---
+
+## Minimal Examples (for Copilot grounding)
+
+**Web POM snippet (async):**
+
+```python
+# sources/web/admin/login_page.py
+from playwright.async_api import Page, Locator
+
 class LoginPage:
-    def verify_login_success(self):
-        expect(self.page).to_have_url("/dashboard")  # Don't do this
+    def __init__(self, page: Page):
+        self.page = page
+        self.email:  Locator = page.get_by_label("Email")
+        self.password: Locator = page.get_by_label("Password")
+        self.login_btn: Locator = page.get_by_role("button", name="Login")
+
+    async def open(self) -> None:
+        await self.page.goto("/login")
+
+    async def login_as(self, email: str, password: str) -> None:
+        await self.email.fill(email)
+        await self.password.fill(password)
+        await self.login_btn.click()
 ```
 
-### Execution & CI/CD
-- **Local**: Run tests via `pytest` command
-- **Parallel**: Configure `pytest-xdist` for concurrent execution
-- **Matrix Testing**: Support multiple browsers, devices, and platforms
-- **Reporting**: Generate Allure reports with artifact handling
-- **Deployment**: Auto-deploy reports to GitHub Pages
+**Android test skeleton (async):**
+
+```python
+# tests/mobile/android/test_login_flow.py
+import pytest
+from sources.mobile.android.login_screen import AndroidLoginScreen
+
+@pytest.mark.mobile
+@pytest.mark.android
+async def test_login_success(android_driver):
+    screen = AndroidLoginScreen(android_driver)
+    await screen.login_as("user@example.com", "secret")
+    # Assertions: verify next screen state (fetch element text via async bridge if needed)
+    # Example (wrapped in screen helper returning a string):
+    # greeting = await screen.get_greeting_text()
+    # assert "Welcome" in greeting
+```
