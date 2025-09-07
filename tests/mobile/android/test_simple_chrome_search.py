@@ -16,12 +16,12 @@ class TestMobileChromeSearch:
     @allure.severity(severity_level.CRITICAL)
     async def test_chrome_search_appium(self, android_driver):
         chrome = ChromeScreen(android_driver)
-        
-        with step("1. Open Google Chrome app"):
-            await chrome.open_google()
-        
-        with step("2. Insert 'Appium' text into searchbar"):
+
+        with step("1. Search for 'Appium' using omnibox flow"):
             await chrome.search_keyword("Appium")
 
+        with step("2. Verify the URL redirection contains keyword"):
+            assert chrome.url_redirection("Appium")
+
         with step("3. Verify search results are not empty"):
-            assert await chrome.verify_results_not_empty(), "Search results doesn't exist or empty"
+            assert chrome.verify_results_not_empty()
