@@ -5,15 +5,15 @@ This module provides the BaseMobileScreen class with only the most common functi
 that is actually used across mobile screen objects. Focused on essentials only.
 """
 
-from typing import List, Optional, Tuple, Dict, Any, Sequence
+from typing import List, Optional, Tuple, Sequence
 from appium.webdriver.webdriver import WebDriver
 from appium.webdriver.webelement import WebElement as AppiumWebElement
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from utils.mobile_config import aify
 import allure
+
 
 
 class BaseMobileScreen:
@@ -40,24 +40,13 @@ class BaseMobileScreen:
         self.timeout = timeout
         self.wait = WebDriverWait(driver, timeout)
 
+
     # Core Element Finding (Essential)
-    def _find(self, selectors: List[Tuple[str, str]]) -> Optional[AppiumWebElement]:
-        """
-        Try multiple selectors and return the first matching element.
+    @aify
+    def _find(self, selectors: Tuple) -> AppiumWebElement:
+        return self.driver.find_element(*selectors)
 
-        Args:
-            selectors: List of (by_method, value) tuples to try in order
-
-        Returns:
-            WebElement if found, None otherwise
-        """
-        for by, value in selectors:
-            try:
-                return self.driver.find_element(by, value)
-            except (NoSuchElementException, TimeoutException):
-                continue
-        return None
-
+    @aify
     def _find_all(self, selectors: List[Tuple[str, str]]) -> Sequence[AppiumWebElement]:
         """
         Try multiple selectors and return elements from the first matching selector.
@@ -77,49 +66,52 @@ class BaseMobileScreen:
                 continue
         return []
 
-    # Core Interactions (Essential)
-    @aify
-    def _tap(self, element: AppiumWebElement):
+    async def _tap(self, element: Tuple):
         """Tap an element."""
-        element.click()
+        self.wait.until(EC.element_to_be_clickable(element))
+        el = await self._find(element)
+        el.click()
 
-    @aify
-    def _type(self, element: AppiumWebElement, text: str, clear_first: bool = True):
+
+    async def _type(self, locator: Tuple, text: str):
         """Type text into an element."""
-        if clear_first:
-            element.clear()
-        element.send_keys(text)
+        wait = WebDriverWait(self.driver, timeout=10)
+        wait.until(EC.text_to_be_present_in_element_value(locator, ""))
+        el = await self._find(locator)
+        el.send_keys(text)
+
 
     @aify
-    def _text(self, element: AppiumWebElement) -> str:
+    async def _text(self, element: AppiumWebElement) -> str:
         """Get text from an element."""
-        return element.text
+        return (await self._find(element)).text
 
     @aify
-    def _visible(self, element: AppiumWebElement) -> bool:
+    async def _visible(self, element: AppiumWebElement) -> bool:
         """Check if element is displayed."""
         try:
             return element.is_displayed()
         except:
             return False
 
+
     # Essential Waits
-    @aify
-    def _wait_visible(self, by: str, value: str, timeout: Optional[int] = None) -> bool:
+    async def _wait_visible(self, locator: Tuple, timeout: int = 5) -> bool:
         """Wait for element to be visible."""
-        wait_timeout = timeout or self.timeout
-        wait = WebDriverWait(self.driver, wait_timeout)
+        wait = WebDriverWait(self.driver, timeout)
         try:
-            wait.until(EC.visibility_of_element_located((by, value)))
+            wait.until(EC.visibility_of_element_located(locator))
             return True
         except TimeoutException:
             return False
+
 
     # Basic Navigation (Essential)
     @aify
     def _goto(self, url: str):
         """Navigate to URL (for web contexts in mobile browsers)."""
         self.driver.get(url)
+
 
     # Essential Page State
     @aify
@@ -150,6 +142,7 @@ class BaseMobileScreen:
             return list(self.driver.contexts)
         except:
             return ["NATIVE_APP"]
+
 
     # Essential Screenshot Support
     @aify
