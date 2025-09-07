@@ -1,10 +1,4 @@
-"""
-Mobile testing configuration for Appium-based Android and iOS automation.
-
-This module provides configuration classes, utilities, and the async bridge
-for mobile device testing, similar to browser_config.py but for mobile platforms.
-"""
-
+import contextlib
 import os
 import asyncio
 from typing import Dict, Any, Optional, Callable, TypeVar, Awaitable
@@ -17,6 +11,20 @@ from appium.options.ios.xcuitest.base import XCUITestOptions
 T = TypeVar('T')
 
 
+async def ensure_native_app_context(driver):
+    """
+    Switch to NATIVE_APP context if not already set. Safe for async/await usage.
+    """
+    try:
+        current = getattr(driver, 'current_context', 'NATIVE_APP')
+        if current != 'NATIVE_APP':
+            # Some drivers may require sync context switch
+            with contextlib.suppress(Exception):
+                driver.switch_to.context('NATIVE_APP')
+    except Exception:
+        pass
+    
+    
 def aify(sync_func: Callable[..., T]) -> Callable[..., Awaitable[T]]:
     """
     Async bridge decorator for Appium synchronous methods.
