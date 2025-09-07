@@ -9,6 +9,13 @@ from utils.pytest_config import (
     configure_environment,
     add_pytest_options
 )
+# Import mobile fixtures
+from tests.fixtures.appium_fixtures import (
+    android_driver,
+    ios_driver, 
+    mobile_capabilities,
+    mobile_test_data
+)
 
 
 def pytest_addoption(parser):
