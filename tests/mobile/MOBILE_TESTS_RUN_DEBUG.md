@@ -13,7 +13,6 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r mobile-tests/requirements.txt
 
 # 2) Start an Android emulator & Appium 2
-emulator -avd Pixel_7_API_34 -gpu host -no-snapshot -netdelay none -netspeed full
 appium driver install uiautomator2
 appium --base-path /wd/hub
 
@@ -48,6 +47,34 @@ If not, open the zip artifact produced by CI (GitHub Actions) — it contains th
 ---
 
 ## 2) Android — Local Run
+### 2.0 First Time Android SDK Setup (Windows)
+
+If you have never installed the Android SDK or used `sdkmanager` before, follow these steps:
+
+1. **Download Android Command Line Tools:**
+  - Go to the official Android developer site: https://developer.android.com/studio#command-tools
+  - Download the "Command line tools only" ZIP for Windows.
+  - Extract it to a folder, e.g. `C:\Android\cmdline-tools`.
+
+2. **Set up SDK folder structure:**
+  - Inside your chosen SDK root (e.g. `C:\Android`), create a folder named `cmdline-tools`.
+  - Move the extracted folder (usually named `cmdline-tools` or `cmdline-tools-latest`) into `C:\Android\cmdline-tools` and rename it to `latest`.
+  - Your structure should look like: `C:\Android\cmdline-tools\latest\bin\sdkmanager.bat`
+
+3. **Set environment variables:**
+  - Open Windows System Properties → Environment Variables.
+  - Add a new user or system variable:
+    - `ANDROID_SDK_ROOT` = `C:\Android`
+  - Add to your `PATH`:
+    - `C:\Android\platform-tools`
+    - `C:\Android\cmdline-tools\latest\bin`
+
+4. **Open a new terminal (PowerShell) and verify:**
+  - Run: `sdkmanager.bat --list`
+  - If you see a list of packages, setup is correct.
+
+Now you can use the `sdkmanager` commands below.
+
 
 ### 2.1 Install SDK components (first time)
 ```bash
@@ -58,7 +85,7 @@ sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0
 ### 2.2 Create & boot an emulator (first time)
 ```bash
 avdmanager create avd -n Pixel_7_API_34 -k "system-images;android-34;google_apis;x86_64" -d pixel_7
-emulator -avd Pixel_7_API_34 -netdelay none -netspeed full &
+emulator -avd Pixel_7_API_34 -netdelay none -netspeed full
 adb devices    # verify device is listed
 ```
 
@@ -133,7 +160,6 @@ appium --base-path /wd/hub
 appium:
   url: "http://127.0.0.1:4723/wd/hub"
 capabilities:
-  platformName: "iOS"
   automationName: "XCUITest"
   deviceName: "iPhone 15"
   platformVersion: "18.0"
