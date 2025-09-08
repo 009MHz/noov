@@ -86,6 +86,12 @@ capabilities:
 
 ### 2.5 Run tests
 ```bash
+# Setup The emulator
+emulator -avd Pixel_7_API_34 -gpu host -no-snapshot -netdelay none -netspeed ful
+
+# Run the appium 
+appium
+
 # Smoke
 pytest -m smoke --config mobile-tests/configs/android.local.yaml \
   --alluredir=reports/allure-results
